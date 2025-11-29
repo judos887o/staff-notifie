@@ -1,168 +1,164 @@
+--// STAFF NOTIFIER (ROT) //--
+
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+
 local localPlayer = Players.LocalPlayer
 
--- === MODERNE NOTIFICATION FUNKTION ===
 local function showModernNotification(text, color)
-	local staffNotifierGui = Instance.new("ScreenGui")
-	staffNotifierGui.Name = "StaffNotifierGui"
-	staffNotifierGui.Parent = localPlayer:WaitForChild("PlayerGui")
+    local staffNotifierGui = Instance.new("ScreenGui")
+    staffNotifierGui.Name = "StaffNotifierGui"
+    staffNotifierGui.ResetOnSpawn = false
+    staffNotifierGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
-	local mainFrame = Instance.new("Frame")
-	mainFrame.Size = UDim2.new(0, 500, 0, 60)
-	mainFrame.Position = UDim2.new(0.5, -250, 0, 10)
-	mainFrame.BackgroundTransparency = 1
-	mainFrame.Parent = staffNotifierGui
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 500, 0, 60)
+    mainFrame.Position = UDim2.new(0.5, -250, 0, 10)
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = staffNotifierGui
 
-	local shadow = Instance.new("ImageLabel")
-	shadow.Name = "Shadow"
-	shadow.Image = "rbxassetid://1316045217"
-	shadow.Size = UDim2.new(1, 20, 1, 20)
-	shadow.Position = UDim2.new(0, -10, 0, -10)
-	shadow.BackgroundTransparency = 1
-	shadow.ImageTransparency = 1
-	shadow.ZIndex = 0
-	shadow.Parent = mainFrame
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.Image = "rbxassetid://1316045217"
+    shadow.Size = UDim2.new(1, 20, 1, 20)
+    shadow.Position = UDim2.new(0, -10, 0, -10)
+    shadow.BackgroundTransparency = 1
+    shadow.ImageTransparency = 1
+    shadow.ZIndex = 0
+    shadow.Parent = mainFrame
 
-	local notificationButton = Instance.new("Frame")
-	notificationButton.Size = UDim2.new(1, 0, 1, 0)
-	notificationButton.BackgroundColor3 = Color3.fromRGB(120, 70, 255)
-	notificationButton.BackgroundTransparency = 1
-	notificationButton.Parent = mainFrame
-	notificationButton.ZIndex = 1
+    local notificationFrame = Instance.new("Frame")
+    notificationFrame.Size = UDim2.new(1, 0, 1, 0)
+    notificationFrame.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+    notificationFrame.BackgroundTransparency = 1
+    notificationFrame.ZIndex = 1
+    notificationFrame.Parent = mainFrame
 
-	local gradient = Instance.new("UIGradient")
-	gradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(170, 110, 255)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 70, 255))
-	}
-	gradient.Rotation = 45
-	gradient.Parent = notificationButton
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 120, 120)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 0, 0))
+    }
+    gradient.Rotation = 45
+    gradient.Parent = notificationFrame
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 18)
-	corner.Parent = notificationButton
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 18)
+    corner.Parent = notificationFrame
 
-	local icon = Instance.new("ImageLabel")
-	icon.Image = "rbxassetid://6031068438"
-	icon.Size = UDim2.new(0, 32, 0, 32)
-	icon.Position = UDim2.new(0, 14, 0.5, -16)
-	icon.BackgroundTransparency = 1
-	icon.ImageTransparency = 1
-	icon.ZIndex = 2
-	icon.Parent = notificationButton
+    local icon = Instance.new("ImageLabel")
+    icon.Image = "rbxassetid://6031068438"
+    icon.Size = UDim2.new(0, 32, 0, 32)
+    icon.Position = UDim2.new(0, 14, 0.5, -16)
+    icon.BackgroundTransparency = 1
+    icon.ImageTransparency = 1
+    icon.ZIndex = 2
+    icon.Parent = notificationFrame
 
-	local notificationText = Instance.new("TextLabel")
-	notificationText.Text = text
-	notificationText.Size = UDim2.new(1, -60, 1, 0)
-	notificationText.AnchorPoint = Vector2.new(0.5, 0.5)
-	notificationText.Position = UDim2.new(0.5, 27, 0.5, 0)
-	notificationText.BackgroundTransparency = 1
-	notificationText.TextColor3 = Color3.fromRGB(255, 255, 255)
-	notificationText.Font = Enum.Font.GothamBold
-	notificationText.TextSize = 20
-	notificationText.TextWrapped = true
-	notificationText.ZIndex = 2
-	notificationText.TextTransparency = 1
-	notificationText.TextYAlignment = Enum.TextYAlignment.Center
-	notificationText.TextXAlignment = Enum.TextXAlignment.Left
-	notificationText.Parent = notificationButton
+    local notificationText = Instance.new("TextLabel")
+    notificationText.Text = text
+    notificationText.Size = UDim2.new(1, -60, 1, 0)
+    notificationText.AnchorPoint = Vector2.new(0.5, 0.5)
+    notificationText.Position = UDim2.new(0.5, 27, 0.5, 0)
+    notificationText.BackgroundTransparency = 1
+    notificationText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    notificationText.Font = Enum.Font.GothamBold
+    notificationText.TextSize = 20
+    notificationText.TextWrapped = true
+    notificationText.ZIndex = 2
+    notificationText.TextTransparency = 1
+    notificationText.TextYAlignment = Enum.TextYAlignment.Center
+    notificationText.TextXAlignment = Enum.TextXAlignment.Left
+    notificationText.Parent = notificationFrame
 
-	if color then
-		gradient.Color = ColorSequence.new{
-			ColorSequenceKeypoint.new(0, color:lerp(Color3.fromRGB(255,255,255), 0.2)),
-			ColorSequenceKeypoint.new(1, color)
-		}
-	end
+    -- Farbe vom Aufrufer bestimmen (Staff Join = rot, Leave = grün o.ä.)
+    if color then
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, color:lerp(Color3.fromRGB(255,255,255), 0.2)),
+            ColorSequenceKeypoint.new(1, color)
+        }
+    end
 
-	local notificationSound = Instance.new("Sound")
-	notificationSound.SoundId = "rbxassetid://17208372272"
-	notificationSound.Volume = 0.5
-	notificationSound.Parent = staffNotifierGui
+    local notificationSound = Instance.new("Sound")
+    notificationSound.SoundId = "rbxassetid://17208372272"
+    notificationSound.Volume = 0.5
+    notificationSound.Parent = staffNotifierGui
 
-	local TweenService = game:GetService("TweenService")
-	local info = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-	local targetPos = UDim2.new(0.5, -250, 0, 30)
-	local fadeIn = { BackgroundTransparency = 0 }
-	local fadeInShadow = { ImageTransparency = 0.6 }
-	local fadeInIcon = { ImageTransparency = 0 }
-	local fadeInText = { TextTransparency = 0 }
+    local targetPos = UDim2.new(0.5, -250, 0, 30)
+    mainFrame.Position = UDim2.new(0.5, -250, 0, 10)
+    notificationFrame.BackgroundTransparency = 1
+    shadow.ImageTransparency = 1
+    icon.ImageTransparency = 1
+    notificationText.TextTransparency = 1
 
-	mainFrame.Position = UDim2.new(0.5, -250, 0, 10)
-	notificationButton.BackgroundTransparency = 1
-	shadow.ImageTransparency = 1
-	icon.ImageTransparency = 1
-	notificationText.TextTransparency = 1
+    notificationSound:Play()
 
-	notificationSound:Play()
+    TweenService:Create(mainFrame, tweenInfo, {Position = targetPos}):Play()
+    TweenService:Create(notificationFrame, tweenInfo, {BackgroundTransparency = 0}):Play()
+    TweenService:Create(shadow, tweenInfo, {ImageTransparency = 0.6}):Play()
+    TweenService:Create(icon, tweenInfo, {ImageTransparency = 0}):Play()
+    TweenService:Create(notificationText, tweenInfo, {TextTransparency = 0}):Play()
 
-	TweenService:Create(mainFrame, info, {Position = targetPos}):Play()
-	TweenService:Create(notificationButton, info, fadeIn):Play()
-	TweenService:Create(shadow, info, fadeInShadow):Play()
-	TweenService:Create(icon, info, fadeInIcon):Play()
-	TweenService:Create(notificationText, info, fadeInText):Play()
-
-	task.delay(10, function()
-		local fadeOut = { BackgroundTransparency = 1 }
-		local fadeOutShadow = { ImageTransparency = 1 }
-		local fadeOutIcon = { ImageTransparency = 1 }
-		local fadeOutText = { TextTransparency = 1 }
-		local outPos = UDim2.new(0.5, -250, 0, 10)
-
-		TweenService:Create(mainFrame, info, {Position = outPos}):Play()
-		TweenService:Create(notificationButton, info, fadeOut):Play()
-		TweenService:Create(shadow, info, fadeOutShadow):Play()
-		TweenService:Create(icon, info, fadeOutIcon):Play()
-		TweenService:Create(notificationText, info, fadeOutText):Play()
-
-		task.wait(0.5)
-		if staffNotifierGui then
-			staffNotifierGui:Destroy()
-		end
-	end)
+    task.delay(10, function()
+        local outPos = UDim2.new(0.5, -250, 0, 10)
+        TweenService:Create(mainFrame, tweenInfo, {Position = outPos}):Play()
+        TweenService:Create(notificationFrame, tweenInfo, {BackgroundTransparency = 1}):Play()
+        TweenService:Create(shadow, tweenInfo, {ImageTransparency = 1}):Play()
+        TweenService:Create(icon, tweenInfo, {ImageTransparency = 1}):Play()
+        TweenService:Create(notificationText, tweenInfo, {TextTransparency = 1}):Play()
+        task.wait(0.5)
+        if staffNotifierGui then
+            staffNotifierGui:Destroy()
+        end
+    end)
 end
 
--- === STAFF NOTIFY LOGIK ===
+-- STAFF CHECK
 local groupId = 693335996
 local minimumRank = 1
-local staffPlayers = {}
-
-local function isStaff(player)
-	local success, rank = pcall(function()
-		return player:GetRankInGroup(groupId)
-	end)
-	return success and rank >= minimumRank
-end
-
--- Status-Tracking
 local lastStaffInServer = {}
 
--- Dauerhafte Überprüfung
+local function isStaff(player)
+    local success, rank = pcall(function()
+        return player:GetRankInGroup(groupId)
+    end)
+    return success and rank >= minimumRank
+end
+
 task.spawn(function()
-	while true do
-		local currentStaff = {}
-		for _, player in ipairs(Players:GetPlayers()) do
-			if player ~= localPlayer and isStaff(player) then
-				currentStaff[player.UserId] = player
-			end
-		end
+    while true do
+        local currentStaff = {}
 
-		-- Staff join
-		for userId, player in pairs(currentStaff) do
-			if not lastStaffInServer[userId] then
-				showModernNotification(player.Name .. " (Staff) joined! Disable your scripts or leave!", Color3.fromRGB(255, 190, 25))
-			end
-		end
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= localPlayer and isStaff(plr) then
+                currentStaff[plr.UserId] = plr
+            end
+        end
 
-		-- Staff leave
-		for userId, _ in pairs(lastStaffInServer) do
-			if not currentStaff[userId] then
-				local leftName = lastStaffInServer[userId].Name or "Staff"
-				showModernNotification(leftName .. " (Staff) left. It's now safe to continue using scripts.", Color3.fromRGB(0, 200, 100))
-			end
-		end
+        -- Join -> ROT
+        for userId, plr in pairs(currentStaff) do
+            if not lastStaffInServer[userId] then
+                showModernNotification(
+                    plr.Name .. " (Staff) joined! Disable your scripts or leave!",
+                    Color3.fromRGB(255, 0, 0)
+                )
+            end
+        end
 
-		lastStaffInServer = currentStaff
-		task.wait(2) -- Alle 2 Sekunden prüfen
-	end
+        -- Leave -> GRÜN
+        for userId, oldPlr in pairs(lastStaffInServer) do
+            if not currentStaff[userId] then
+                local leftName = oldPlr and oldPlr.Name or "Staff"
+                showModernNotification(
+                    leftName .. " (Staff) left. It's now safe to continue using scripts.",
+                    Color3.fromRGB(0, 200, 100)
+                )
+            end
+        end
+
+        lastStaffInServer = currentStaff
+        task.wait(2)
+    end
 end)

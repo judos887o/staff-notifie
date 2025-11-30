@@ -115,7 +115,17 @@ local function showModernNotification(text, color)
     end)
 end
 
+----------------------------------------------------------------
+-- START-NOTIFICATION
+----------------------------------------------------------------
+showModernNotification(
+    "Notifier will run in backround dont worry!",
+    Color3.fromRGB(0, 170, 255) -- Blau / neutral
+)
+
+----------------------------------------------------------------
 -- STAFF CHECK
+----------------------------------------------------------------
 local groupId = 693335996
 local minimumRank = 1
 local lastStaffInServer = {}

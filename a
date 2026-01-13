@@ -6,9 +6,21 @@ local localPlayer = Players.LocalPlayer
 local Shared = getgenv().SchmecktHubPC or {}
 local key = "StaffNotifier"
 
+if Shared.Connections and Shared.Connections[key] then
+    for _, c in pairs(Shared.Connections[key]) do
+        pcall(function() c:Disconnect() end)
+    end
+end
 Shared.Connections = Shared.Connections or {}
-if Shared.Connections[key] then return end
 Shared.Connections[key] = {}
+
+-- Altes GUI löschen falls vorhanden
+if localPlayer:WaitForChild("PlayerGui"):FindFirstChild("StaffNotifierGui") then
+    localPlayer.PlayerGui.StaffNotifierGui:Destroy()
+end
+if localPlayer:WaitForChild("PlayerGui"):FindFirstChild("StaffListGui") then
+    localPlayer.PlayerGui.StaffListGui:Destroy()
+end
 
 local Theme = {
     Background = Color3.fromRGB(15, 5, 5),
@@ -117,6 +129,7 @@ local function showModernNotification(text, color)
     TweenService:Create(notificationText, tweenInfo, {TextTransparency = 0}):Play()
 
     task.delay(10, function()
+        if not staffNotifierGui or not staffNotifierGui.Parent then return end
         local outPos = UDim2.new(0.5, -250, 0, 10)
         TweenService:Create(mainFrame, tweenInfo, {Position = outPos}):Play()
         TweenService:Create(notificationFrame, tweenInfo, {BackgroundTransparency = 1}):Play()
@@ -361,25 +374,46 @@ showModernNotification("Staff Notifier Active - Monitoring Server", Color3.fromR
 
 updateStaffList()
 
-local conn = RunService.Heartbeat:Connect(function()
-    if not Shared.StaffNotifier then return end
+local cleanupListener
+cleanupListener = RunService.RenderStepped:Connect(function()
+    if not Shared.StaffNotifier then
+        if StaffListGui then StaffListGui:Destroy() end
+        if localPlayer.PlayerGui:FindFirstChild("StaffNotifierGui") then
+            localPlayer.PlayerGui.StaffNotifierGui:Destroy()
+        end
+        
+        cleanupListener:Disconnect()
+        
+        -- Alle anderen Verbindungen stoppen
+        if Shared.Connections[key] then
+            for _, c in pairs(Shared.Connections[key]) do
+                pcall(function() c:Disconnect() end)
+            end
+            Shared.Connections[key] = {}
+        end
+    end
 end)
-table.insert(Shared.Connections[key], conn)
+table.insert(Shared.Connections[key], cleanupListener)
 
-Players.PlayerAdded:Connect(function(plr)
+local pa = Players.PlayerAdded:Connect(function(plr)
     task.wait(1)
     if isStaff(plr) then
         updateStaffList()
     end
 end)
+table.insert(Shared.Connections[key], pa)
 
-Players.PlayerRemoving:Connect(function(plr)
+local pr = Players.PlayerRemoving:Connect(function(plr)
     updateStaffList()
 end)
+table.insert(Shared.Connections[key], pr)
 
 task.spawn(function()
     while true do
-        if not Shared.StaffNotifier then task.wait(1) continue end
+        if not Shared.StaffNotifier then 
+            break 
+        end
+        
         local currentStaff = {}
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= localPlayer and isStaff(plr) then currentStaff[plr.UserId] = plr end

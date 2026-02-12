@@ -6,6 +6,19 @@ local localPlayer = Players.LocalPlayer
 local Shared = getgenv().SchmecktHubPC or {}
 local key = "StaffNotifier"
 
+local SCALE = 1
+if Shared.Platform == "Mobile" then
+    SCALE = 1 / 2.2
+end
+
+local function scaleUDim(x, y)
+    return UDim2.new(0, x * SCALE, 0, y * SCALE)
+end
+
+local function scaleSize(s)
+    return math.floor(s * SCALE)
+end
+
 if Shared.Connections and Shared.Connections[key] then
     for _, c in pairs(Shared.Connections[key]) do
         pcall(function() c:Disconnect() end)
@@ -57,20 +70,20 @@ local function showModernNotification(text, notifType)
     staffNotifierGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 520, 0, 70)
-    mainFrame.Position = UDim2.new(0.5, -260, 0, -80)
+    mainFrame.Size = scaleUDim(520, 70)
+    mainFrame.Position = UDim2.new(0.5, -(260 * SCALE), 0, -(80 * SCALE))
     mainFrame.BackgroundTransparency = 1
     mainFrame.Parent = staffNotifierGui
 
     local shadow = Instance.new("Frame")
     shadow.Name = "Shadow"
-    shadow.Size = UDim2.new(1, 10, 1, 10)
-    shadow.Position = UDim2.new(0, -5, 0, -5)
+    shadow.Size = UDim2.new(1, 10 * SCALE, 1, 10 * SCALE)
+    shadow.Position = UDim2.new(0, -(5 * SCALE), 0, -(5 * SCALE))
     shadow.BackgroundColor3 = Theme.Shadow
     shadow.BackgroundTransparency = 1
     shadow.ZIndex = 0
     shadow.Parent = mainFrame
-    Instance.new("UICorner", shadow).CornerRadius = UDim.new(0, 18)
+    Instance.new("UICorner", shadow).CornerRadius = UDim.new(0, 18 * SCALE)
 
     local notificationFrame = Instance.new("Frame")
     notificationFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -78,10 +91,10 @@ local function showModernNotification(text, notifType)
     notificationFrame.BackgroundTransparency = 1
     notificationFrame.ZIndex = 1
     notificationFrame.Parent = mainFrame
-    Instance.new("UICorner", notificationFrame).CornerRadius = UDim.new(0, 14)
+    Instance.new("UICorner", notificationFrame).CornerRadius = UDim.new(0, 14 * SCALE)
 
     local notifStroke = Instance.new("UIStroke")
-    notifStroke.Thickness = 2
+    notifStroke.Thickness = 2 * SCALE
     notifStroke.Transparency = 1
     notifStroke.Parent = notificationFrame
 
@@ -113,7 +126,7 @@ local function showModernNotification(text, notifType)
     glowFrame.BackgroundTransparency = 1
     glowFrame.ZIndex = 1
     glowFrame.Parent = notificationFrame
-    Instance.new("UICorner", glowFrame).CornerRadius = UDim.new(0, 14)
+    Instance.new("UICorner", glowFrame).CornerRadius = UDim.new(0, 14 * SCALE)
 
     local glowGrad = Instance.new("UIGradient")
     glowGrad.Rotation = 90
@@ -131,8 +144,8 @@ local function showModernNotification(text, notifType)
     glowGrad.Parent = glowFrame
 
     local logo1 = Instance.new("ImageLabel")
-    logo1.Size = UDim2.new(0, 40, 0, 40)
-    logo1.Position = UDim2.new(0, 12, 0.5, -20)
+    logo1.Size = scaleUDim(40, 40)
+    logo1.Position = UDim2.new(0, 12 * SCALE, 0.5, -(20 * SCALE))
     logo1.BackgroundColor3 = Theme.Card
     logo1.BackgroundTransparency = 0
     logo1.Image = LOGO_ASSET
@@ -140,15 +153,15 @@ local function showModernNotification(text, notifType)
     logo1.ImageTransparency = 1
     logo1.ZIndex = 2
     logo1.Parent = notificationFrame
-    Instance.new("UICorner", logo1).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", logo1).CornerRadius = UDim.new(0, 8 * SCALE)
 
     local xLabel = Instance.new("TextLabel")
-    xLabel.Size = UDim2.new(0, 20, 0, 40)
-    xLabel.Position = UDim2.new(0, 54, 0.5, -20)
+    xLabel.Size = scaleUDim(20, 40)
+    xLabel.Position = UDim2.new(0, 54 * SCALE, 0.5, -(20 * SCALE))
     xLabel.BackgroundTransparency = 1
     xLabel.Text = "✕"
     xLabel.Font = Enum.Font.GothamBlack
-    xLabel.TextSize = 14
+    xLabel.TextSize = scaleSize(14)
     xLabel.TextColor3 = Theme.Purple
     xLabel.TextTransparency = 1
     xLabel.ZIndex = 2
@@ -163,8 +176,8 @@ local function showModernNotification(text, notifType)
     xGrad.Parent = xLabel
 
     local logo2 = Instance.new("ImageLabel")
-    logo2.Size = UDim2.new(0, 36, 0, 36)
-    logo2.Position = UDim2.new(0, 76, 0.5, -18)
+    logo2.Size = scaleUDim(36, 36)
+    logo2.Position = UDim2.new(0, 76 * SCALE, 0.5, -(18 * SCALE))
     logo2.BackgroundTransparency = 1
     logo2.Image = LOGO2_ASSET
     logo2.ScaleType = Enum.ScaleType.Fit
@@ -174,8 +187,8 @@ local function showModernNotification(text, notifType)
     Instance.new("UICorner", logo2).CornerRadius = UDim.new(1, 0)
 
     local icon = Instance.new("ImageLabel")
-    icon.Size = UDim2.new(0, 28, 0, 28)
-    icon.Position = UDim2.new(0, 120, 0.5, -14)
+    icon.Size = scaleUDim(28, 28)
+    icon.Position = UDim2.new(0, 120 * SCALE, 0.5, -(14 * SCALE))
     icon.BackgroundTransparency = 1
     icon.Image = notifType == "danger" and "rbxassetid://6031071053" or (notifType == "success" and "rbxassetid://6031068420" or "rbxassetid://6031068438")
     icon.ImageTransparency = 1
@@ -192,12 +205,12 @@ local function showModernNotification(text, notifType)
 
     local notificationText = Instance.new("TextLabel")
     notificationText.Text = text
-    notificationText.Size = UDim2.new(1, -165, 1, 0)
-    notificationText.Position = UDim2.new(0, 155, 0, 0)
+    notificationText.Size = UDim2.new(1, -(165 * SCALE), 1, 0)
+    notificationText.Position = UDim2.new(0, 155 * SCALE, 0, 0)
     notificationText.BackgroundTransparency = 1
     notificationText.TextColor3 = Theme.Text
     notificationText.Font = Enum.Font.GothamBold
-    notificationText.TextSize = 14
+    notificationText.TextSize = scaleSize(14)
     notificationText.TextWrapped = true
     notificationText.ZIndex = 2
     notificationText.TextTransparency = 1
@@ -232,7 +245,7 @@ local function showModernNotification(text, notifType)
     notificationSound:Play()
 
     local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    local targetPos = UDim2.new(0.5, -260, 0, 20)
+    local targetPos = UDim2.new(0.5, -(260 * SCALE), 0, 20 * SCALE)
 
     TweenService:Create(mainFrame, tweenInfo, {Position = targetPos}):Play()
     TweenService:Create(shadow, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 0.5}):Play()
@@ -285,7 +298,7 @@ local function showModernNotification(text, notifType)
         if not staffNotifierGui or not staffNotifierGui.Parent then return end
         
         local outTween = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-        local outPos = UDim2.new(0.5, -260, 0, -80)
+        local outPos = UDim2.new(0.5, -(260 * SCALE), 0, -(80 * SCALE))
         
         TweenService:Create(mainFrame, outTween, {Position = outPos}):Play()
         TweenService:Create(shadow, outTween, {BackgroundTransparency = 1}):Play()
@@ -311,29 +324,29 @@ StaffListGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
 local MainShadow = Instance.new("Frame")
 MainShadow.Name = "Shadow"
-MainShadow.Size = UDim2.new(0, 240, 0, 300)
-MainShadow.Position = UDim2.new(1, -255, 1, -315)
+MainShadow.Size = scaleUDim(240, 300)
+MainShadow.Position = UDim2.new(1, -(255 * SCALE), 1, -(315 * SCALE))
 MainShadow.BackgroundColor3 = Theme.Shadow
 MainShadow.BackgroundTransparency = 0.5
 MainShadow.BorderSizePixel = 0
 MainShadow.Parent = StaffListGui
-Instance.new("UICorner", MainShadow).CornerRadius = UDim.new(0, 16)
+Instance.new("UICorner", MainShadow).CornerRadius = UDim.new(0, 16 * SCALE)
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 230, 0, 290)
-MainFrame.Position = UDim2.new(1, -250, 1, -310)
+MainFrame.Size = scaleUDim(230, 290)
+MainFrame.Position = UDim2.new(1, -(250 * SCALE), 1, -(310 * SCALE))
 MainFrame.BackgroundColor3 = Theme.Background
 MainFrame.BackgroundTransparency = 0.02
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = StaffListGui
 
 local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.CornerRadius = UDim.new(0, 14 * SCALE)
 MainCorner.Parent = MainFrame
 
 local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 2
+MainStroke.Thickness = 2 * SCALE
 MainStroke.Transparency = 0
 MainStroke.Parent = MainFrame
 
@@ -348,11 +361,11 @@ mainStrokeGrad.Parent = MainStroke
 
 local HeaderFrame = Instance.new("Frame")
 HeaderFrame.Name = "Header"
-HeaderFrame.Size = UDim2.new(1, 0, 0, 50)
+HeaderFrame.Size = UDim2.new(1, 0, 0, 50 * SCALE)
 HeaderFrame.BackgroundColor3 = Theme.Card
 HeaderFrame.BorderSizePixel = 0
 HeaderFrame.Parent = MainFrame
-Instance.new("UICorner", HeaderFrame).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", HeaderFrame).CornerRadius = UDim.new(0, 14 * SCALE)
 
 local headerGlow = Instance.new("Frame")
 headerGlow.Size = UDim2.new(1, 0, 1, 0)
@@ -360,7 +373,7 @@ headerGlow.BackgroundColor3 = Theme.Purple
 headerGlow.BackgroundTransparency = 0.88
 headerGlow.BorderSizePixel = 0
 headerGlow.Parent = HeaderFrame
-Instance.new("UICorner", headerGlow).CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", headerGlow).CornerRadius = UDim.new(0, 14 * SCALE)
 
 local hGlowGrad = Instance.new("UIGradient")
 hGlowGrad.Rotation = 0
@@ -371,21 +384,21 @@ hGlowGrad.Transparency = NumberSequence.new({
 hGlowGrad.Parent = headerGlow
 
 local HeaderLogo1 = Instance.new("ImageLabel")
-HeaderLogo1.Size = UDim2.new(0, 28, 0, 28)
-HeaderLogo1.Position = UDim2.new(0, 10, 0.5, -14)
+HeaderLogo1.Size = scaleUDim(28, 28)
+HeaderLogo1.Position = UDim2.new(0, 10 * SCALE, 0.5, -(14 * SCALE))
 HeaderLogo1.BackgroundColor3 = Theme.Background
 HeaderLogo1.Image = LOGO_ASSET
 HeaderLogo1.ScaleType = Enum.ScaleType.Crop
 HeaderLogo1.Parent = HeaderFrame
-Instance.new("UICorner", HeaderLogo1).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", HeaderLogo1).CornerRadius = UDim.new(0, 6 * SCALE)
 
 local HeaderX = Instance.new("TextLabel")
-HeaderX.Size = UDim2.new(0, 14, 0, 28)
-HeaderX.Position = UDim2.new(0, 40, 0.5, -14)
+HeaderX.Size = scaleUDim(14, 28)
+HeaderX.Position = UDim2.new(0, 40 * SCALE, 0.5, -(14 * SCALE))
 HeaderX.BackgroundTransparency = 1
 HeaderX.Text = "✕"
 HeaderX.Font = Enum.Font.GothamBlack
-HeaderX.TextSize = 10
+HeaderX.TextSize = scaleSize(10)
 HeaderX.TextColor3 = Theme.Purple
 HeaderX.Parent = HeaderFrame
 
@@ -398,8 +411,8 @@ headerXGrad.Color = ColorSequence.new({
 headerXGrad.Parent = HeaderX
 
 local HeaderLogo2 = Instance.new("ImageLabel")
-HeaderLogo2.Size = UDim2.new(0, 24, 0, 24)
-HeaderLogo2.Position = UDim2.new(0, 56, 0.5, -12)
+HeaderLogo2.Size = scaleUDim(24, 24)
+HeaderLogo2.Position = UDim2.new(0, 56 * SCALE, 0.5, -(12 * SCALE))
 HeaderLogo2.BackgroundTransparency = 1
 HeaderLogo2.Image = LOGO2_ASSET
 HeaderLogo2.ScaleType = Enum.ScaleType.Fit
@@ -407,12 +420,12 @@ HeaderLogo2.Parent = HeaderFrame
 Instance.new("UICorner", HeaderLogo2).CornerRadius = UDim.new(1, 0)
 
 local HeaderText = Instance.new("TextLabel")
-HeaderText.Size = UDim2.new(1, -130, 0, 18)
-HeaderText.Position = UDim2.new(0, 88, 0, 8)
+HeaderText.Size = UDim2.new(1, -(130 * SCALE), 0, 18 * SCALE)
+HeaderText.Position = UDim2.new(0, 88 * SCALE, 0, 8 * SCALE)
 HeaderText.BackgroundTransparency = 1
 HeaderText.Text = "STAFF MONITOR"
 HeaderText.Font = Enum.Font.GothamBlack
-HeaderText.TextSize = 11
+HeaderText.TextSize = scaleSize(11)
 HeaderText.TextColor3 = Theme.Accent
 HeaderText.TextXAlignment = Enum.TextXAlignment.Left
 HeaderText.Parent = HeaderFrame
@@ -427,12 +440,12 @@ headerTextGrad.Color = ColorSequence.new({
 headerTextGrad.Parent = HeaderText
 
 local HeaderSub = Instance.new("TextLabel")
-HeaderSub.Size = UDim2.new(1, -130, 0, 14)
-HeaderSub.Position = UDim2.new(0, 88, 0, 26)
+HeaderSub.Size = UDim2.new(1, -(130 * SCALE), 0, 14 * SCALE)
+HeaderSub.Position = UDim2.new(0, 88 * SCALE, 0, 26 * SCALE)
 HeaderSub.BackgroundTransparency = 1
 HeaderSub.Text = "Meulios ✕ ShadowPepper"
 HeaderSub.Font = Enum.Font.GothamMedium
-HeaderSub.TextSize = 9
+HeaderSub.TextSize = scaleSize(9)
 HeaderSub.TextColor3 = Theme.SubText
 HeaderSub.TextXAlignment = Enum.TextXAlignment.Left
 HeaderSub.Parent = HeaderFrame
@@ -448,16 +461,16 @@ subGrad.Parent = HeaderSub
 
 local CountLabel = Instance.new("TextLabel")
 CountLabel.Name = "Count"
-CountLabel.Size = UDim2.new(0, 28, 0, 18)
-CountLabel.Position = UDim2.new(1, -38, 0, 5)
+CountLabel.Size = scaleUDim(28, 18)
+CountLabel.Position = UDim2.new(1, -(38 * SCALE), 0, 5 * SCALE)
 CountLabel.BackgroundColor3 = Theme.Purple
 CountLabel.BorderSizePixel = 0
 CountLabel.Text = "0"
 CountLabel.Font = Enum.Font.GothamBlack
-CountLabel.TextSize = 11
+CountLabel.TextSize = scaleSize(11)
 CountLabel.TextColor3 = Theme.Text
 CountLabel.Parent = HeaderFrame
-Instance.new("UICorner", CountLabel).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", CountLabel).CornerRadius = UDim.new(0, 6 * SCALE)
 
 local countGrad = Instance.new("UIGradient")
 countGrad.Rotation = 45
@@ -469,11 +482,11 @@ countGrad.Parent = CountLabel
 
 local ScrollFrame = Instance.new("ScrollingFrame")
 ScrollFrame.Name = "StaffList"
-ScrollFrame.Size = UDim2.new(1, -16, 1, -66)
-ScrollFrame.Position = UDim2.new(0, 8, 0, 58)
+ScrollFrame.Size = UDim2.new(1, -(16 * SCALE), 1, -(66 * SCALE))
+ScrollFrame.Position = UDim2.new(0, 8 * SCALE, 0, 58 * SCALE)
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.BorderSizePixel = 0
-ScrollFrame.ScrollBarThickness = 4
+ScrollFrame.ScrollBarThickness = 4 * SCALE
 ScrollFrame.ScrollBarImageColor3 = Theme.Purple
 ScrollFrame.ScrollBarImageTransparency = 0.3
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -481,16 +494,16 @@ ScrollFrame.Parent = MainFrame
 
 local ListLayout = Instance.new("UIListLayout")
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ListLayout.Padding = UDim.new(0, 6)
+ListLayout.Padding = UDim.new(0, 6 * SCALE)
 ListLayout.Parent = ScrollFrame
 
 local NoStaffLabel = Instance.new("TextLabel")
 NoStaffLabel.Name = "NoStaff"
-NoStaffLabel.Size = UDim2.new(1, 0, 0, 80)
+NoStaffLabel.Size = UDim2.new(1, 0, 0, 80 * SCALE)
 NoStaffLabel.BackgroundTransparency = 1
 NoStaffLabel.Text = "✦ No staff detected\nin this server"
 NoStaffLabel.Font = Enum.Font.GothamMedium
-NoStaffLabel.TextSize = 13
+NoStaffLabel.TextSize = scaleSize(13)
 NoStaffLabel.TextColor3 = Theme.SubText
 NoStaffLabel.TextWrapped = true
 NoStaffLabel.Visible = true
@@ -507,22 +520,22 @@ noStaffGrad.Parent = NoStaffLabel
 local function createStaffCard(player)
     local Card = Instance.new("Frame")
     Card.Name = "Staff_" .. player.UserId
-    Card.Size = UDim2.new(1, 0, 0, 56)
+    Card.Size = UDim2.new(1, 0, 0, 56 * SCALE)
     Card.BackgroundColor3 = Theme.Card
     Card.BorderSizePixel = 0
     Card.Parent = ScrollFrame
-    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 10)
+    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 10 * SCALE)
 
     local CardStroke = Instance.new("UIStroke")
     CardStroke.Color = Theme.Stroke
-    CardStroke.Thickness = 1.5
+    CardStroke.Thickness = 1.5 * SCALE
     CardStroke.Transparency = 0.3
     CardStroke.Parent = Card
 
     local Avatar = Instance.new("ImageLabel")
     Avatar.Name = "Avatar"
-    Avatar.Size = UDim2.new(0, 40, 0, 40)
-    Avatar.Position = UDim2.new(0, 8, 0.5, -20)
+    Avatar.Size = scaleUDim(40, 40)
+    Avatar.Position = UDim2.new(0, 8 * SCALE, 0.5, -(20 * SCALE))
     Avatar.BackgroundColor3 = Theme.Background
     Avatar.BorderSizePixel = 0
     Avatar.Parent = Card
@@ -530,7 +543,7 @@ local function createStaffCard(player)
 
     local AvatarStroke = Instance.new("UIStroke")
     AvatarStroke.Color = Theme.Purple
-    AvatarStroke.Thickness = 2
+    AvatarStroke.Thickness = 2 * SCALE
     AvatarStroke.Parent = Avatar
 
     task.spawn(function()
@@ -542,12 +555,12 @@ local function createStaffCard(player)
 
     local NameLabel = Instance.new("TextLabel")
     NameLabel.Name = "DisplayName"
-    NameLabel.Size = UDim2.new(1, -105, 0, 18)
-    NameLabel.Position = UDim2.new(0, 56, 0, 10)
+    NameLabel.Size = UDim2.new(1, -(105 * SCALE), 0, 18 * SCALE)
+    NameLabel.Position = UDim2.new(0, 56 * SCALE, 0, 10 * SCALE)
     NameLabel.BackgroundTransparency = 1
     NameLabel.Text = player.DisplayName
     NameLabel.Font = Enum.Font.GothamBold
-    NameLabel.TextSize = 13
+    NameLabel.TextSize = scaleSize(13)
     NameLabel.TextColor3 = Theme.Text
     NameLabel.TextXAlignment = Enum.TextXAlignment.Left
     NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -555,12 +568,12 @@ local function createStaffCard(player)
 
     local UsernameLabel = Instance.new("TextLabel")
     UsernameLabel.Name = "Username"
-    UsernameLabel.Size = UDim2.new(1, -105, 0, 14)
-    UsernameLabel.Position = UDim2.new(0, 56, 0, 28)
+    UsernameLabel.Size = UDim2.new(1, -(105 * SCALE), 0, 14 * SCALE)
+    UsernameLabel.Position = UDim2.new(0, 56 * SCALE, 0, 28 * SCALE)
     UsernameLabel.BackgroundTransparency = 1
     UsernameLabel.Text = "@" .. player.Name
     UsernameLabel.Font = Enum.Font.Gotham
-    UsernameLabel.TextSize = 11
+    UsernameLabel.TextSize = scaleSize(11)
     UsernameLabel.TextColor3 = Theme.SubText
     UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
     UsernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
@@ -568,16 +581,16 @@ local function createStaffCard(player)
 
     local StaffBadge = Instance.new("TextLabel")
     StaffBadge.Name = "Badge"
-    StaffBadge.Size = UDim2.new(0, 44, 0, 18)
-    StaffBadge.Position = UDim2.new(1, -52, 0.5, -9)
+    StaffBadge.Size = scaleUDim(44, 18)
+    StaffBadge.Position = UDim2.new(1, -(52 * SCALE), 0.5, -(9 * SCALE))
     StaffBadge.BackgroundColor3 = Theme.Danger
     StaffBadge.BorderSizePixel = 0
     StaffBadge.Text = "⚠ STAFF"
     StaffBadge.Font = Enum.Font.GothamBlack
-    StaffBadge.TextSize = 8
+    StaffBadge.TextSize = scaleSize(8)
     StaffBadge.TextColor3 = Theme.Text
     StaffBadge.Parent = Card
-    Instance.new("UICorner", StaffBadge).CornerRadius = UDim.new(0, 5)
+    Instance.new("UICorner", StaffBadge).CornerRadius = UDim.new(0, 5 * SCALE)
 
     local badgeGrad = Instance.new("UIGradient")
     badgeGrad.Rotation = 45
@@ -615,7 +628,7 @@ local function updateStaffList()
     CountLabel.Text = tostring(staffCount)
     NoStaffLabel.Visible = (staffCount == 0)
 
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
+    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + (10 * SCALE))
 end
 
 local mainColorPhase = 0
@@ -699,8 +712,8 @@ end)
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
 MainShadow.Size = UDim2.new(0, 0, 0, 0)
 MainShadow.BackgroundTransparency = 1
-TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 230, 0, 290)}):Play()
-TweenService:Create(MainShadow, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 240, 0, 300)}):Play()
+TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = scaleUDim(230, 290)}):Play()
+TweenService:Create(MainShadow, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = scaleUDim(240, 300)}):Play()
 TweenService:Create(MainShadow, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 0.5}):Play()
 
 showModernNotification("Staff Monitor Active - Protecting Your Session", "info")

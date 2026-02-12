@@ -53,7 +53,7 @@ local Theme = {
 local LOGO_ASSET = "rbxassetid://121759217057084"
 local LOGO2_ASSET = "rbxassetid://118676632373972"
 
-local groupId = 693335996
+local groupId = 128056089
 local minimumRank = 1
 local lastStaffInServer = {}
 

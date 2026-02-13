@@ -56,10 +56,14 @@ local LOGO2_ASSET = "rbxassetid://118676632373972"
 local groupId = 128056089
 local minimumRank = 1
 local lastStaffInServer = {}
+local staffCache = setmetatable({}, {__mode = "k"})
 
 local function isStaff(player)
+    if staffCache[player] ~= nil then return staffCache[player] end
     local success, rank = pcall(function() return player:GetRankInGroup(groupId) end)
-    return success and rank >= minimumRank
+    local result = success and rank >= minimumRank
+    staffCache[player] = result
+    return result
 end
 
 local function showModernNotification(text, notifType)
@@ -258,15 +262,17 @@ local function showModernNotification(text, notifType)
     TweenService:Create(notificationText, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
 
     local colorPhase = 0
+    local lastNotifColorUpdate = 0
     local colorConnection
     colorConnection = RunService.Heartbeat:Connect(function(dt)
         if not notificationFrame.Parent then
             colorConnection:Disconnect()
             return
         end
-        
-        colorPhase = (colorPhase + dt * 0.8) % 1
-        
+        lastNotifColorUpdate = lastNotifColorUpdate + dt
+        if lastNotifColorUpdate < 0.05 then return end
+        lastNotifColorUpdate = 0
+        colorPhase = (colorPhase + 0.05 * 0.8) % 1
         local function lerpColor(t)
             local colors = {
                 Color3.fromRGB(255, 20, 147),
@@ -279,15 +285,12 @@ local function showModernNotification(text, notifType)
             local localT = (t * #colors) % 1
             return colors[index]:Lerp(colors[nextIndex], localT)
         end
-        
         local o1, o2, o3 = colorPhase, (colorPhase + 0.33) % 1, (colorPhase + 0.66) % 1
-        
         strokeGrad.Color = ColorSequence.new({
             ColorSequenceKeypoint.new(0, lerpColor(o1)),
             ColorSequenceKeypoint.new(0.5, lerpColor(o2)),
             ColorSequenceKeypoint.new(1, lerpColor(o3))
         })
-        
         xGrad.Color = ColorSequence.new({
             ColorSequenceKeypoint.new(0, lerpColor(o2)),
             ColorSequenceKeypoint.new(1, lerpColor(o3))
@@ -296,10 +299,8 @@ local function showModernNotification(text, notifType)
 
     task.delay(8, function()
         if not staffNotifierGui or not staffNotifierGui.Parent then return end
-        
         local outTween = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
         local outPos = UDim2.new(0.5, -(260 * SCALE), 0, -(80 * SCALE))
-        
         TweenService:Create(mainFrame, outTween, {Position = outPos}):Play()
         TweenService:Create(shadow, outTween, {BackgroundTransparency = 1}):Play()
         TweenService:Create(notificationFrame, outTween, {BackgroundTransparency = 1}):Play()
@@ -309,7 +310,6 @@ local function showModernNotification(text, notifType)
         TweenService:Create(xLabel, outTween, {TextTransparency = 1}):Play()
         TweenService:Create(icon, outTween, {ImageTransparency = 1}):Play()
         TweenService:Create(notificationText, outTween, {TextTransparency = 1}):Play()
-        
         task.wait(0.5)
         colorConnection:Disconnect()
         if staffNotifierGui then staffNotifierGui:Destroy() end
@@ -616,7 +616,6 @@ local function updateStaffList()
             child:Destroy()
         end
     end
-
     local staffCount = 0
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= localPlayer and isStaff(plr) then
@@ -624,22 +623,22 @@ local function updateStaffList()
             staffCount = staffCount + 1
         end
     end
-
     CountLabel.Text = tostring(staffCount)
     NoStaffLabel.Visible = (staffCount == 0)
-
     ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + (10 * SCALE))
 end
 
 local mainColorPhase = 0
+local lastColorUpdate = 0
 local mainColorConnection = RunService.Heartbeat:Connect(function(dt)
     if not MainFrame.Parent then
         mainColorConnection:Disconnect()
         return
     end
-    
-    mainColorPhase = (mainColorPhase + dt * 0.6) % 1
-    
+    lastColorUpdate = lastColorUpdate + dt
+    if lastColorUpdate < 0.05 then return end
+    lastColorUpdate = 0
+    mainColorPhase = (mainColorPhase + 0.05 * 0.6) % 1
     local function lerpColor(t)
         local colors = {
             Color3.fromRGB(255, 20, 147),
@@ -652,28 +651,23 @@ local mainColorConnection = RunService.Heartbeat:Connect(function(dt)
         local localT = (t * #colors) % 1
         return colors[index]:Lerp(colors[nextIndex], localT)
     end
-    
     local o1 = mainColorPhase
     local o2 = (mainColorPhase + 0.33) % 1
     local o3 = (mainColorPhase + 0.66) % 1
-    
     mainStrokeGrad.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, lerpColor(o1)),
         ColorSequenceKeypoint.new(0.5, lerpColor(o2)),
         ColorSequenceKeypoint.new(1, lerpColor(o3))
     })
-    
     headerTextGrad.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, lerpColor(o1)),
         ColorSequenceKeypoint.new(0.5, lerpColor(o2)),
         ColorSequenceKeypoint.new(1, lerpColor(o3))
     })
-    
     headerXGrad.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, lerpColor(o2)),
         ColorSequenceKeypoint.new(1, lerpColor(o3))
     })
-    
     subGrad.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, lerpColor(o2):Lerp(Color3.new(1,1,1), 0.3)),
         ColorSequenceKeypoint.new(0.5, lerpColor(o3)),
@@ -727,9 +721,7 @@ cleanupListener = RunService.RenderStepped:Connect(function()
         if localPlayer.PlayerGui:FindFirstChild("StaffNotifierGui") then
             localPlayer.PlayerGui.StaffNotifierGui:Destroy()
         end
-        
         cleanupListener:Disconnect()
-        
         if Shared.Connections[key] then
             for _, c in pairs(Shared.Connections[key]) do
                 pcall(function() c:Disconnect() end)
@@ -749,30 +741,28 @@ end)
 table.insert(Shared.Connections[key], pa)
 
 local pr = Players.PlayerRemoving:Connect(function(plr)
+    staffCache[plr] = nil
     updateStaffList()
 end)
 table.insert(Shared.Connections[key], pr)
 
 task.spawn(function()
     while true do
-        if not Shared.StaffNotifier then 
-            break 
+        if not Shared.StaffNotifier then
+            break
         end
-        
         local currentStaff = {}
         for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= localPlayer and isStaff(plr) then 
-                currentStaff[plr.UserId] = plr 
+            if plr ~= localPlayer and isStaff(plr) then
+                currentStaff[plr.UserId] = plr
             end
         end
-        
         for userId, plr in pairs(currentStaff) do
             if not lastStaffInServer[userId] then
                 showModernNotification("⚠ " .. plr.Name .. " (STAFF) joined! Disable scripts or leave!", "danger")
                 updateStaffList()
             end
         end
-        
         for userId, oldPlr in pairs(lastStaffInServer) do
             if not currentStaff[userId] then
                 local leftName = oldPlr and oldPlr.Name or "Staff"
@@ -780,8 +770,7 @@ task.spawn(function()
                 updateStaffList()
             end
         end
-        
         lastStaffInServer = currentStaff
-        task.wait(2)
+        task.wait(5)
     end
 end)

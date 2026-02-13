@@ -1,22 +1,35 @@
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
+local SoundService = game:GetService("SoundService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 local localPlayer = Players.LocalPlayer
 
 local Shared = getgenv().SchmecktHubPC or {}
 local key = "StaffNotifier"
 
-local SCALE = 1
-if Shared.Platform == "Mobile" then
-    SCALE = 1 / 2.2
+local IS_MOBILE = Shared.Platform == "Mobile" or UserInputService.TouchEnabled
+local SCALE = IS_MOBILE and 0.5 or 1
+
+local function s(v) return math.floor(v * SCALE) end
+
+local CLICK_SOUND_ID = "rbxassetid://100809160609628"
+local INTRO_LOGO_ASSET = "rbxassetid://121759217057084"
+
+local clickSound = SoundService:FindFirstChild("SchmecktClickSound")
+if not clickSound then
+    clickSound = Instance.new("Sound")
+    clickSound.Name = "SchmecktClickSound"
+    clickSound.SoundId = CLICK_SOUND_ID
+    clickSound.Volume = 0.5
+    clickSound.Parent = SoundService
 end
 
-local function scaleUDim(x, y)
-    return UDim2.new(0, x * SCALE, 0, y * SCALE)
-end
-
-local function scaleSize(s)
-    return math.floor(s * SCALE)
+local function playClick()
+    task.spawn(function()
+        pcall(function() clickSound:Stop() clickSound:Play() end)
+    end)
 end
 
 if Shared.Connections and Shared.Connections[key] then
@@ -34,24 +47,30 @@ if localPlayer:WaitForChild("PlayerGui"):FindFirstChild("StaffListGui") then
     localPlayer.PlayerGui.StaffListGui:Destroy()
 end
 
-local Theme = {
-    Background = Color3.fromRGB(20, 5, 15),
-    Card = Color3.fromRGB(45, 12, 35),
-    Accent = Color3.fromRGB(255, 20, 147),
-    AccentSecondary = Color3.fromRGB(220, 20, 60),
-    Purple = Color3.fromRGB(180, 50, 255),
-    PurpleLight = Color3.fromRGB(220, 130, 255),
-    Text = Color3.fromRGB(255, 255, 255),
-    SubText = Color3.fromRGB(255, 150, 180),
-    Stroke = Color3.fromRGB(150, 30, 100),
-    StrokeLight = Color3.fromRGB(255, 105, 180),
-    Shadow = Color3.fromRGB(0, 0, 0),
-    Success = Color3.fromRGB(50, 255, 150),
-    Danger = Color3.fromRGB(255, 50, 80)
+local COL = {
+    BgMain    = Color3.fromRGB(90, 0, 0),
+    BgTop     = Color3.fromRGB(140, 0, 0),
+    BgInner   = Color3.fromRGB(120, 0, 0),
+    Card      = Color3.fromRGB(135, 0, 0),
+    Card2     = Color3.fromRGB(150, 0, 0),
+    Stroke1   = Color3.fromRGB(255, 110, 110),
+    Stroke2   = Color3.fromRGB(255, 150, 150),
+    Text      = Color3.fromRGB(255, 255, 255),
+    SubText   = Color3.fromRGB(255, 210, 210),
+    DimText   = Color3.fromRGB(255, 170, 170),
+    DevText   = Color3.fromRGB(200, 160, 160),
+    Danger    = Color3.fromRGB(255, 50, 50),
+    Success   = Color3.fromRGB(50, 255, 120),
+    ScrollBar = Color3.fromRGB(255, 80, 80),
+    BadgeBg   = Color3.fromRGB(200, 30, 30),
 }
 
-local LOGO_ASSET = "rbxassetid://121759217057084"
-local LOGO2_ASSET = "rbxassetid://118676632373972"
+local function corner(inst, px)
+    local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, px or s(10)); c.Parent = inst; return c
+end
+local function strokeUI(inst, color, thickness, transparency)
+    local st = Instance.new("UIStroke"); st.Color = color; st.Thickness = thickness or 1; st.Transparency = transparency or 0; st.Parent = inst; return st
+end
 
 local groupId = 128056089
 local minimumRank = 1
@@ -66,253 +85,114 @@ local function isStaff(player)
     return result
 end
 
-local function showModernNotification(text, notifType)
-    local staffNotifierGui = Instance.new("ScreenGui")
-    staffNotifierGui.Name = "StaffNotifierGui"
-    staffNotifierGui.ResetOnSpawn = false
-    staffNotifierGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    staffNotifierGui.Parent = localPlayer:WaitForChild("PlayerGui")
+local function showNotification(text, notifType)
+    local notifGui = Instance.new("ScreenGui")
+    notifGui.Name = "StaffNotifierGui"
+    notifGui.ResetOnSpawn = false
+    notifGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    notifGui.Parent = localPlayer:WaitForChild("PlayerGui")
+
+    local notifW = s(500)
+    local notifH = s(64)
 
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = scaleUDim(520, 70)
-    mainFrame.Position = UDim2.new(0.5, -(260 * SCALE), 0, -(80 * SCALE))
-    mainFrame.BackgroundTransparency = 1
-    mainFrame.Parent = staffNotifierGui
+    mainFrame.Size = UDim2.new(0, notifW, 0, notifH)
+    mainFrame.Position = UDim2.new(0.5, -notifW/2, 0, -notifH - s(20))
+    mainFrame.BackgroundColor3 = COL.BgMain
+    mainFrame.BackgroundTransparency = 0.05
+    mainFrame.BorderSizePixel = 0
+    mainFrame.ZIndex = 10
+    mainFrame.Parent = notifGui
+    corner(mainFrame, s(14))
 
-    local shadow = Instance.new("Frame")
-    shadow.Name = "Shadow"
-    shadow.Size = UDim2.new(1, 10 * SCALE, 1, 10 * SCALE)
-    shadow.Position = UDim2.new(0, -(5 * SCALE), 0, -(5 * SCALE))
-    shadow.BackgroundColor3 = Theme.Shadow
-    shadow.BackgroundTransparency = 1
-    shadow.ZIndex = 0
-    shadow.Parent = mainFrame
-    Instance.new("UICorner", shadow).CornerRadius = UDim.new(0, 18 * SCALE)
+    local notifStrokeColor = COL.Stroke1
+    if notifType == "danger" then notifStrokeColor = COL.Danger
+    elseif notifType == "success" then notifStrokeColor = COL.Success end
+    strokeUI(mainFrame, notifStrokeColor, s(2), 0)
 
-    local notificationFrame = Instance.new("Frame")
-    notificationFrame.Size = UDim2.new(1, 0, 1, 0)
-    notificationFrame.BackgroundColor3 = Theme.Background
-    notificationFrame.BackgroundTransparency = 1
-    notificationFrame.ZIndex = 1
-    notificationFrame.Parent = mainFrame
-    Instance.new("UICorner", notificationFrame).CornerRadius = UDim.new(0, 14 * SCALE)
-
-    local notifStroke = Instance.new("UIStroke")
-    notifStroke.Thickness = 2 * SCALE
-    notifStroke.Transparency = 1
-    notifStroke.Parent = notificationFrame
-
-    local strokeGrad = Instance.new("UIGradient")
-    strokeGrad.Rotation = 45
-    if notifType == "danger" then
-        strokeGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 50, 80)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 20, 147)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 50, 255))
-        })
-    elseif notifType == "success" then
-        strokeGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 255, 150)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(100, 255, 200)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 50, 255))
-        })
-    else
-        strokeGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 20, 147)),
-            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(180, 50, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 20, 60))
-        })
-    end
-    strokeGrad.Parent = notifStroke
-
-    local glowFrame = Instance.new("Frame")
-    glowFrame.Size = UDim2.new(1, 0, 1, 0)
-    glowFrame.BackgroundTransparency = 1
-    glowFrame.ZIndex = 1
-    glowFrame.Parent = notificationFrame
-    Instance.new("UICorner", glowFrame).CornerRadius = UDim.new(0, 14 * SCALE)
-
-    local glowGrad = Instance.new("UIGradient")
-    glowGrad.Rotation = 90
-    glowGrad.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.7),
-        NumberSequenceKeypoint.new(1, 1)
+    local topGrad = Instance.new("UIGradient")
+    topGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(165, 0, 0)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 0, 0)),
     })
-    if notifType == "danger" then
-        glowGrad.Color = ColorSequence.new(Color3.fromRGB(255, 50, 80))
-    elseif notifType == "success" then
-        glowGrad.Color = ColorSequence.new(Color3.fromRGB(50, 255, 150))
-    else
-        glowGrad.Color = ColorSequence.new(Theme.Purple)
-    end
-    glowGrad.Parent = glowFrame
+    topGrad.Parent = mainFrame
 
-    local logo1 = Instance.new("ImageLabel")
-    logo1.Size = scaleUDim(40, 40)
-    logo1.Position = UDim2.new(0, 12 * SCALE, 0.5, -(20 * SCALE))
-    logo1.BackgroundColor3 = Theme.Card
-    logo1.BackgroundTransparency = 0
-    logo1.Image = LOGO_ASSET
-    logo1.ScaleType = Enum.ScaleType.Crop
-    logo1.ImageTransparency = 1
-    logo1.ZIndex = 2
-    logo1.Parent = notificationFrame
-    Instance.new("UICorner", logo1).CornerRadius = UDim.new(0, 8 * SCALE)
-
-    local xLabel = Instance.new("TextLabel")
-    xLabel.Size = scaleUDim(20, 40)
-    xLabel.Position = UDim2.new(0, 54 * SCALE, 0.5, -(20 * SCALE))
-    xLabel.BackgroundTransparency = 1
-    xLabel.Text = "✕"
-    xLabel.Font = Enum.Font.GothamBlack
-    xLabel.TextSize = scaleSize(14)
-    xLabel.TextColor3 = Theme.Purple
-    xLabel.TextTransparency = 1
-    xLabel.ZIndex = 2
-    xLabel.Parent = notificationFrame
-
-    local xGrad = Instance.new("UIGradient")
-    xGrad.Rotation = 45
-    xGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(180, 50, 255)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 130, 255))
-    })
-    xGrad.Parent = xLabel
-
-    local logo2 = Instance.new("ImageLabel")
-    logo2.Size = scaleUDim(36, 36)
-    logo2.Position = UDim2.new(0, 76 * SCALE, 0.5, -(18 * SCALE))
-    logo2.BackgroundTransparency = 1
-    logo2.Image = LOGO2_ASSET
-    logo2.ScaleType = Enum.ScaleType.Fit
-    logo2.ImageTransparency = 1
-    logo2.ZIndex = 2
-    logo2.Parent = notificationFrame
-    Instance.new("UICorner", logo2).CornerRadius = UDim.new(1, 0)
-
-    local icon = Instance.new("ImageLabel")
-    icon.Size = scaleUDim(28, 28)
-    icon.Position = UDim2.new(0, 120 * SCALE, 0.5, -(14 * SCALE))
-    icon.BackgroundTransparency = 1
-    icon.Image = notifType == "danger" and "rbxassetid://6031071053" or (notifType == "success" and "rbxassetid://6031068420" or "rbxassetid://6031068438")
-    icon.ImageTransparency = 1
-    icon.ZIndex = 2
-    icon.Parent = notificationFrame
+    local accentBar = Instance.new("Frame")
+    accentBar.Size = UDim2.new(0, s(4), 1, -s(16))
+    accentBar.Position = UDim2.new(0, s(10), 0, s(8))
+    accentBar.BorderSizePixel = 0
+    accentBar.ZIndex = 11
+    accentBar.Parent = mainFrame
+    corner(accentBar, s(2))
 
     if notifType == "danger" then
-        icon.ImageColor3 = Theme.Danger
+        accentBar.BackgroundColor3 = COL.Danger
     elseif notifType == "success" then
-        icon.ImageColor3 = Theme.Success
+        accentBar.BackgroundColor3 = COL.Success
     else
-        icon.ImageColor3 = Theme.Purple
+        accentBar.BackgroundColor3 = COL.Stroke1
     end
 
-    local notificationText = Instance.new("TextLabel")
-    notificationText.Text = text
-    notificationText.Size = UDim2.new(1, -(165 * SCALE), 1, 0)
-    notificationText.Position = UDim2.new(0, 155 * SCALE, 0, 0)
-    notificationText.BackgroundTransparency = 1
-    notificationText.TextColor3 = Theme.Text
-    notificationText.Font = Enum.Font.GothamBold
-    notificationText.TextSize = scaleSize(14)
-    notificationText.TextWrapped = true
-    notificationText.ZIndex = 2
-    notificationText.TextTransparency = 1
-    notificationText.TextYAlignment = Enum.TextYAlignment.Center
-    notificationText.TextXAlignment = Enum.TextXAlignment.Left
-    notificationText.Parent = notificationFrame
+    local logo = Instance.new("ImageLabel")
+    logo.Size = UDim2.new(0, s(34), 0, s(34))
+    logo.Position = UDim2.new(0, s(22), 0.5, -s(17))
+    logo.BackgroundTransparency = 1
+    logo.Image = INTRO_LOGO_ASSET
+    logo.ScaleType = Enum.ScaleType.Crop
+    logo.ZIndex = 11
+    logo.Parent = mainFrame
+    corner(logo, s(999))
+    strokeUI(logo, COL.Stroke2, 1, 0.3)
 
-    local textGrad = Instance.new("UIGradient")
-    textGrad.Rotation = 0
+    local iconLabel = Instance.new("TextLabel")
+    iconLabel.Size = UDim2.new(0, s(24), 0, s(24))
+    iconLabel.Position = UDim2.new(0, s(64), 0.5, -s(12))
+    iconLabel.BackgroundTransparency = 1
+    iconLabel.Font = Enum.Font.GothamBlack
+    iconLabel.TextSize = s(18)
+    iconLabel.ZIndex = 11
+    iconLabel.Parent = mainFrame
+
     if notifType == "danger" then
-        textGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 150, 180))
-        })
+        iconLabel.Text = "!"
+        iconLabel.TextColor3 = COL.Danger
     elseif notifType == "success" then
-        textGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 255, 200))
-        })
+        iconLabel.Text = "✓"
+        iconLabel.TextColor3 = COL.Success
     else
-        textGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 150, 200))
-        })
+        iconLabel.Text = "i"
+        iconLabel.TextColor3 = COL.Stroke1
     end
-    textGrad.Parent = notificationText
 
-    local notificationSound = Instance.new("Sound")
-    notificationSound.SoundId = "rbxassetid://17208372272"
-    notificationSound.Volume = 0.5
-    notificationSound.Parent = staffNotifierGui
-    notificationSound:Play()
+    local notifText = Instance.new("TextLabel")
+    notifText.Text = text
+    notifText.Size = UDim2.new(1, -s(100), 1, -s(16))
+    notifText.Position = UDim2.new(0, s(94), 0, s(8))
+    notifText.BackgroundTransparency = 1
+    notifText.TextColor3 = COL.Text
+    notifText.Font = Enum.Font.GothamBold
+    notifText.TextSize = s(14)
+    notifText.TextWrapped = true
+    notifText.ZIndex = 11
+    notifText.TextYAlignment = Enum.TextYAlignment.Center
+    notifText.TextXAlignment = Enum.TextXAlignment.Left
+    notifText.Parent = mainFrame
 
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    local targetPos = UDim2.new(0.5, -(260 * SCALE), 0, 20 * SCALE)
+    local notifSound = Instance.new("Sound")
+    notifSound.SoundId = CLICK_SOUND_ID
+    notifSound.Volume = 0.5
+    notifSound.Parent = notifGui
+    notifSound:Play()
 
-    TweenService:Create(mainFrame, tweenInfo, {Position = targetPos}):Play()
-    TweenService:Create(shadow, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 0.5}):Play()
-    TweenService:Create(notificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 0.05}):Play()
-    TweenService:Create(notifStroke, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {Transparency = 0}):Play()
-    TweenService:Create(logo1, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {ImageTransparency = 0}):Play()
-    TweenService:Create(logo2, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {ImageTransparency = 0}):Play()
-    TweenService:Create(xLabel, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
-    TweenService:Create(icon, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {ImageTransparency = 0}):Play()
-    TweenService:Create(notificationText, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {TextTransparency = 0}):Play()
+    local targetPos = UDim2.new(0.5, -notifW/2, 0, s(20))
+    TweenService:Create(mainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = targetPos}):Play()
 
-    local colorPhase = 0
-    local lastNotifColorUpdate = 0
-    local colorConnection
-    colorConnection = RunService.Heartbeat:Connect(function(dt)
-        if not notificationFrame.Parent then
-            colorConnection:Disconnect()
-            return
-        end
-        lastNotifColorUpdate = lastNotifColorUpdate + dt
-        if lastNotifColorUpdate < 0.05 then return end
-        lastNotifColorUpdate = 0
-        colorPhase = (colorPhase + 0.05 * 0.8) % 1
-        local function lerpColor(t)
-            local colors = {
-                Color3.fromRGB(255, 20, 147),
-                Color3.fromRGB(220, 20, 60),
-                Color3.fromRGB(180, 50, 255),
-                Color3.fromRGB(255, 105, 180),
-            }
-            local index = math.floor(t * #colors) + 1
-            local nextIndex = (index % #colors) + 1
-            local localT = (t * #colors) % 1
-            return colors[index]:Lerp(colors[nextIndex], localT)
-        end
-        local o1, o2, o3 = colorPhase, (colorPhase + 0.33) % 1, (colorPhase + 0.66) % 1
-        strokeGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, lerpColor(o1)),
-            ColorSequenceKeypoint.new(0.5, lerpColor(o2)),
-            ColorSequenceKeypoint.new(1, lerpColor(o3))
-        })
-        xGrad.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, lerpColor(o2)),
-            ColorSequenceKeypoint.new(1, lerpColor(o3))
-        })
-    end)
-
-    task.delay(8, function()
-        if not staffNotifierGui or not staffNotifierGui.Parent then return end
-        local outTween = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-        local outPos = UDim2.new(0.5, -(260 * SCALE), 0, -(80 * SCALE))
-        TweenService:Create(mainFrame, outTween, {Position = outPos}):Play()
-        TweenService:Create(shadow, outTween, {BackgroundTransparency = 1}):Play()
-        TweenService:Create(notificationFrame, outTween, {BackgroundTransparency = 1}):Play()
-        TweenService:Create(notifStroke, outTween, {Transparency = 1}):Play()
-        TweenService:Create(logo1, outTween, {ImageTransparency = 1}):Play()
-        TweenService:Create(logo2, outTween, {ImageTransparency = 1}):Play()
-        TweenService:Create(xLabel, outTween, {TextTransparency = 1}):Play()
-        TweenService:Create(icon, outTween, {ImageTransparency = 1}):Play()
-        TweenService:Create(notificationText, outTween, {TextTransparency = 1}):Play()
+    task.delay(6, function()
+        if not notifGui or not notifGui.Parent then return end
+        local outPos = UDim2.new(0.5, -notifW/2, 0, -notifH - s(20))
+        TweenService:Create(mainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = outPos}):Play()
         task.wait(0.5)
-        colorConnection:Disconnect()
-        if staffNotifierGui then staffNotifierGui:Destroy() end
+        if notifGui then notifGui:Destroy() end
     end)
 end
 
@@ -322,229 +202,153 @@ StaffListGui.ResetOnSpawn = false
 StaffListGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 StaffListGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
-local MainShadow = Instance.new("Frame")
-MainShadow.Name = "Shadow"
-MainShadow.Size = scaleUDim(240, 300)
-MainShadow.Position = UDim2.new(1, -(255 * SCALE), 1, -(315 * SCALE))
-MainShadow.BackgroundColor3 = Theme.Shadow
-MainShadow.BackgroundTransparency = 0.5
-MainShadow.BorderSizePixel = 0
-MainShadow.Parent = StaffListGui
-Instance.new("UICorner", MainShadow).CornerRadius = UDim.new(0, 16 * SCALE)
+local panelW = s(240)
+local panelH = s(280)
+local headerH = s(46)
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = scaleUDim(230, 290)
-MainFrame.Position = UDim2.new(1, -(250 * SCALE), 1, -(310 * SCALE))
-MainFrame.BackgroundColor3 = Theme.Background
-MainFrame.BackgroundTransparency = 0.02
+MainFrame.Size = UDim2.new(0, panelW, 0, panelH)
+MainFrame.Position = UDim2.new(1, -(panelW + s(20)), 1, -(panelH + s(20)))
+MainFrame.BackgroundColor3 = COL.BgMain
+MainFrame.BackgroundTransparency = 0
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = StaffListGui
-
-local MainCorner = Instance.new("UICorner")
-MainCorner.CornerRadius = UDim.new(0, 14 * SCALE)
-MainCorner.Parent = MainFrame
-
-local MainStroke = Instance.new("UIStroke")
-MainStroke.Thickness = 2 * SCALE
-MainStroke.Transparency = 0
-MainStroke.Parent = MainFrame
-
-local mainStrokeGrad = Instance.new("UIGradient")
-mainStrokeGrad.Rotation = 90
-mainStrokeGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 20, 147)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(180, 50, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 20, 60))
-})
-mainStrokeGrad.Parent = MainStroke
+corner(MainFrame, s(14))
+strokeUI(MainFrame, COL.Stroke1, s(2), 0)
 
 local HeaderFrame = Instance.new("Frame")
-HeaderFrame.Name = "Header"
-HeaderFrame.Size = UDim2.new(1, 0, 0, 50 * SCALE)
-HeaderFrame.BackgroundColor3 = Theme.Card
+HeaderFrame.Size = UDim2.new(1, -s(12), 0, headerH)
+HeaderFrame.Position = UDim2.new(0, s(6), 0, s(6))
+HeaderFrame.BackgroundColor3 = COL.BgTop
 HeaderFrame.BorderSizePixel = 0
 HeaderFrame.Parent = MainFrame
-Instance.new("UICorner", HeaderFrame).CornerRadius = UDim.new(0, 14 * SCALE)
+corner(HeaderFrame, s(12))
+strokeUI(HeaderFrame, COL.Stroke2, 1, 0.15)
 
-local headerGlow = Instance.new("Frame")
-headerGlow.Size = UDim2.new(1, 0, 1, 0)
-headerGlow.BackgroundColor3 = Theme.Purple
-headerGlow.BackgroundTransparency = 0.88
-headerGlow.BorderSizePixel = 0
-headerGlow.Parent = HeaderFrame
-Instance.new("UICorner", headerGlow).CornerRadius = UDim.new(0, 14 * SCALE)
-
-local hGlowGrad = Instance.new("UIGradient")
-hGlowGrad.Rotation = 0
-hGlowGrad.Transparency = NumberSequence.new({
-    NumberSequenceKeypoint.new(0, 0),
-    NumberSequenceKeypoint.new(1, 1)
+local headerGrad = Instance.new("UIGradient")
+headerGrad.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(165, 0, 0)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 0)),
 })
-hGlowGrad.Parent = headerGlow
+headerGrad.Parent = HeaderFrame
 
-local HeaderLogo1 = Instance.new("ImageLabel")
-HeaderLogo1.Size = scaleUDim(28, 28)
-HeaderLogo1.Position = UDim2.new(0, 10 * SCALE, 0.5, -(14 * SCALE))
-HeaderLogo1.BackgroundColor3 = Theme.Background
-HeaderLogo1.Image = LOGO_ASSET
-HeaderLogo1.ScaleType = Enum.ScaleType.Crop
-HeaderLogo1.Parent = HeaderFrame
-Instance.new("UICorner", HeaderLogo1).CornerRadius = UDim.new(0, 6 * SCALE)
+local headerLogo = Instance.new("ImageLabel")
+headerLogo.Size = UDim2.new(0, s(26), 0, s(26))
+headerLogo.Position = UDim2.new(0, s(8), 0.5, -s(13))
+headerLogo.BackgroundTransparency = 1
+headerLogo.Image = INTRO_LOGO_ASSET
+headerLogo.ScaleType = Enum.ScaleType.Crop
+headerLogo.ZIndex = 4
+headerLogo.Parent = HeaderFrame
+corner(headerLogo, s(999))
+strokeUI(headerLogo, COL.Stroke2, 1, 0.3)
 
-local HeaderX = Instance.new("TextLabel")
-HeaderX.Size = scaleUDim(14, 28)
-HeaderX.Position = UDim2.new(0, 40 * SCALE, 0.5, -(14 * SCALE))
-HeaderX.BackgroundTransparency = 1
-HeaderX.Text = "✕"
-HeaderX.Font = Enum.Font.GothamBlack
-HeaderX.TextSize = scaleSize(10)
-HeaderX.TextColor3 = Theme.Purple
-HeaderX.Parent = HeaderFrame
+local headerTitle = Instance.new("TextLabel")
+headerTitle.Size = UDim2.new(1, -s(80), 0, s(18))
+headerTitle.Position = UDim2.new(0, s(40), 0, s(4))
+headerTitle.BackgroundTransparency = 1
+headerTitle.Text = "STAFF MONITOR"
+headerTitle.Font = Enum.Font.GothamBlack
+headerTitle.TextSize = s(11)
+headerTitle.TextColor3 = COL.Text
+headerTitle.TextXAlignment = Enum.TextXAlignment.Left
+headerTitle.ZIndex = 4
+headerTitle.Parent = HeaderFrame
 
-local headerXGrad = Instance.new("UIGradient")
-headerXGrad.Rotation = 45
-headerXGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(180, 50, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 130, 255))
-})
-headerXGrad.Parent = HeaderX
-
-local HeaderLogo2 = Instance.new("ImageLabel")
-HeaderLogo2.Size = scaleUDim(24, 24)
-HeaderLogo2.Position = UDim2.new(0, 56 * SCALE, 0.5, -(12 * SCALE))
-HeaderLogo2.BackgroundTransparency = 1
-HeaderLogo2.Image = LOGO2_ASSET
-HeaderLogo2.ScaleType = Enum.ScaleType.Fit
-HeaderLogo2.Parent = HeaderFrame
-Instance.new("UICorner", HeaderLogo2).CornerRadius = UDim.new(1, 0)
-
-local HeaderText = Instance.new("TextLabel")
-HeaderText.Size = UDim2.new(1, -(130 * SCALE), 0, 18 * SCALE)
-HeaderText.Position = UDim2.new(0, 88 * SCALE, 0, 8 * SCALE)
-HeaderText.BackgroundTransparency = 1
-HeaderText.Text = "STAFF MONITOR"
-HeaderText.Font = Enum.Font.GothamBlack
-HeaderText.TextSize = scaleSize(11)
-HeaderText.TextColor3 = Theme.Accent
-HeaderText.TextXAlignment = Enum.TextXAlignment.Left
-HeaderText.Parent = HeaderFrame
-
-local headerTextGrad = Instance.new("UIGradient")
-headerTextGrad.Rotation = 0
-headerTextGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 20, 147)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(180, 50, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 105, 180))
-})
-headerTextGrad.Parent = HeaderText
-
-local HeaderSub = Instance.new("TextLabel")
-HeaderSub.Size = UDim2.new(1, -(130 * SCALE), 0, 14 * SCALE)
-HeaderSub.Position = UDim2.new(0, 88 * SCALE, 0, 26 * SCALE)
-HeaderSub.BackgroundTransparency = 1
-HeaderSub.Text = "Meulios ✕ ShadowPepper"
-HeaderSub.Font = Enum.Font.GothamMedium
-HeaderSub.TextSize = scaleSize(9)
-HeaderSub.TextColor3 = Theme.SubText
-HeaderSub.TextXAlignment = Enum.TextXAlignment.Left
-HeaderSub.Parent = HeaderFrame
-
-local subGrad = Instance.new("UIGradient")
-subGrad.Rotation = -45
-subGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 180)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(220, 130, 255)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 105, 180))
-})
-subGrad.Parent = HeaderSub
+local headerSub = Instance.new("TextLabel")
+headerSub.Size = UDim2.new(1, -s(80), 0, s(12))
+headerSub.Position = UDim2.new(0, s(40), 0, s(24))
+headerSub.BackgroundTransparency = 1
+headerSub.Text = "developed by schmeckt"
+headerSub.Font = Enum.Font.Gotham
+headerSub.TextSize = s(9)
+headerSub.TextColor3 = COL.DevText
+headerSub.TextXAlignment = Enum.TextXAlignment.Left
+headerSub.ZIndex = 4
+headerSub.Parent = HeaderFrame
 
 local CountLabel = Instance.new("TextLabel")
 CountLabel.Name = "Count"
-CountLabel.Size = scaleUDim(28, 18)
-CountLabel.Position = UDim2.new(1, -(38 * SCALE), 0, 5 * SCALE)
-CountLabel.BackgroundColor3 = Theme.Purple
+CountLabel.Size = UDim2.new(0, s(28), 0, s(20))
+CountLabel.Position = UDim2.new(1, -s(36), 0.5, -s(10))
+CountLabel.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
 CountLabel.BorderSizePixel = 0
 CountLabel.Text = "0"
 CountLabel.Font = Enum.Font.GothamBlack
-CountLabel.TextSize = scaleSize(11)
-CountLabel.TextColor3 = Theme.Text
+CountLabel.TextSize = s(11)
+CountLabel.TextColor3 = COL.Text
+CountLabel.ZIndex = 4
 CountLabel.Parent = HeaderFrame
-Instance.new("UICorner", CountLabel).CornerRadius = UDim.new(0, 6 * SCALE)
+corner(CountLabel, s(8))
 
-local countGrad = Instance.new("UIGradient")
-countGrad.Rotation = 45
-countGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 20, 147)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 50, 255))
-})
-countGrad.Parent = CountLabel
+local ContentFrame = Instance.new("Frame")
+ContentFrame.Size = UDim2.new(1, -s(12), 1, -(headerH + s(18)))
+ContentFrame.Position = UDim2.new(0, s(6), 0, headerH + s(12))
+ContentFrame.BackgroundColor3 = COL.BgInner
+ContentFrame.BorderSizePixel = 0
+ContentFrame.Parent = MainFrame
+corner(ContentFrame, s(12))
+strokeUI(ContentFrame, COL.Stroke2, 1, 0.25)
 
 local ScrollFrame = Instance.new("ScrollingFrame")
 ScrollFrame.Name = "StaffList"
-ScrollFrame.Size = UDim2.new(1, -(16 * SCALE), 1, -(66 * SCALE))
-ScrollFrame.Position = UDim2.new(0, 8 * SCALE, 0, 58 * SCALE)
+ScrollFrame.Size = UDim2.new(1, -s(12), 1, -s(12))
+ScrollFrame.Position = UDim2.new(0, s(6), 0, s(6))
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.BorderSizePixel = 0
-ScrollFrame.ScrollBarThickness = 4 * SCALE
-ScrollFrame.ScrollBarImageColor3 = Theme.Purple
+ScrollFrame.ScrollBarThickness = s(3)
+ScrollFrame.ScrollBarImageColor3 = COL.ScrollBar
 ScrollFrame.ScrollBarImageTransparency = 0.3
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollFrame.Parent = MainFrame
+ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+ScrollFrame.Parent = ContentFrame
 
 local ListLayout = Instance.new("UIListLayout")
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ListLayout.Padding = UDim.new(0, 6 * SCALE)
+ListLayout.Padding = UDim.new(0, s(5))
 ListLayout.Parent = ScrollFrame
+
+local ListPadding = Instance.new("UIPadding")
+ListPadding.PaddingTop = UDim.new(0, s(4))
+ListPadding.PaddingBottom = UDim.new(0, s(4))
+ListPadding.PaddingLeft = UDim.new(0, s(4))
+ListPadding.PaddingRight = UDim.new(0, s(4))
+ListPadding.Parent = ScrollFrame
 
 local NoStaffLabel = Instance.new("TextLabel")
 NoStaffLabel.Name = "NoStaff"
-NoStaffLabel.Size = UDim2.new(1, 0, 0, 80 * SCALE)
+NoStaffLabel.Size = UDim2.new(1, 0, 0, s(80))
 NoStaffLabel.BackgroundTransparency = 1
-NoStaffLabel.Text = "✦ No staff detected\nin this server"
-NoStaffLabel.Font = Enum.Font.GothamMedium
-NoStaffLabel.TextSize = scaleSize(13)
-NoStaffLabel.TextColor3 = Theme.SubText
+NoStaffLabel.Text = "No staff detected\nin this server"
+NoStaffLabel.Font = Enum.Font.GothamSemibold
+NoStaffLabel.TextSize = s(13)
+NoStaffLabel.TextColor3 = COL.DimText
 NoStaffLabel.TextWrapped = true
 NoStaffLabel.Visible = true
 NoStaffLabel.Parent = ScrollFrame
 
-local noStaffGrad = Instance.new("UIGradient")
-noStaffGrad.Rotation = 45
-noStaffGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 150, 180)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 100, 200))
-})
-noStaffGrad.Parent = NoStaffLabel
-
 local function createStaffCard(player)
+    local cardH = s(50)
+
     local Card = Instance.new("Frame")
     Card.Name = "Staff_" .. player.UserId
-    Card.Size = UDim2.new(1, 0, 0, 56 * SCALE)
-    Card.BackgroundColor3 = Theme.Card
+    Card.Size = UDim2.new(1, 0, 0, cardH)
+    Card.BackgroundColor3 = COL.Card
     Card.BorderSizePixel = 0
     Card.Parent = ScrollFrame
-    Instance.new("UICorner", Card).CornerRadius = UDim.new(0, 10 * SCALE)
-
-    local CardStroke = Instance.new("UIStroke")
-    CardStroke.Color = Theme.Stroke
-    CardStroke.Thickness = 1.5 * SCALE
-    CardStroke.Transparency = 0.3
-    CardStroke.Parent = Card
+    corner(Card, s(10))
+    local cardStroke = strokeUI(Card, COL.Stroke2, 1, 0.4)
 
     local Avatar = Instance.new("ImageLabel")
-    Avatar.Name = "Avatar"
-    Avatar.Size = scaleUDim(40, 40)
-    Avatar.Position = UDim2.new(0, 8 * SCALE, 0.5, -(20 * SCALE))
-    Avatar.BackgroundColor3 = Theme.Background
+    Avatar.Size = UDim2.new(0, s(34), 0, s(34))
+    Avatar.Position = UDim2.new(0, s(8), 0.5, -s(17))
+    Avatar.BackgroundTransparency = 1
     Avatar.BorderSizePixel = 0
+    Avatar.ZIndex = 5
     Avatar.Parent = Card
-    Instance.new("UICorner", Avatar).CornerRadius = UDim.new(1, 0)
-
-    local AvatarStroke = Instance.new("UIStroke")
-    AvatarStroke.Color = Theme.Purple
-    AvatarStroke.Thickness = 2 * SCALE
-    AvatarStroke.Parent = Avatar
+    corner(Avatar, s(999))
+    strokeUI(Avatar, COL.Stroke1, s(2), 0.2)
 
     task.spawn(function()
         local ok, img = pcall(function()
@@ -554,57 +358,50 @@ local function createStaffCard(player)
     end)
 
     local NameLabel = Instance.new("TextLabel")
-    NameLabel.Name = "DisplayName"
-    NameLabel.Size = UDim2.new(1, -(105 * SCALE), 0, 18 * SCALE)
-    NameLabel.Position = UDim2.new(0, 56 * SCALE, 0, 10 * SCALE)
+    NameLabel.Size = UDim2.new(1, -s(110), 0, s(16))
+    NameLabel.Position = UDim2.new(0, s(50), 0, s(8))
     NameLabel.BackgroundTransparency = 1
     NameLabel.Text = player.DisplayName
     NameLabel.Font = Enum.Font.GothamBold
-    NameLabel.TextSize = scaleSize(13)
-    NameLabel.TextColor3 = Theme.Text
+    NameLabel.TextSize = s(12)
+    NameLabel.TextColor3 = COL.Text
     NameLabel.TextXAlignment = Enum.TextXAlignment.Left
     NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    NameLabel.ZIndex = 5
     NameLabel.Parent = Card
 
     local UsernameLabel = Instance.new("TextLabel")
-    UsernameLabel.Name = "Username"
-    UsernameLabel.Size = UDim2.new(1, -(105 * SCALE), 0, 14 * SCALE)
-    UsernameLabel.Position = UDim2.new(0, 56 * SCALE, 0, 28 * SCALE)
+    UsernameLabel.Size = UDim2.new(1, -s(110), 0, s(12))
+    UsernameLabel.Position = UDim2.new(0, s(50), 0, s(26))
     UsernameLabel.BackgroundTransparency = 1
     UsernameLabel.Text = "@" .. player.Name
     UsernameLabel.Font = Enum.Font.Gotham
-    UsernameLabel.TextSize = scaleSize(11)
-    UsernameLabel.TextColor3 = Theme.SubText
+    UsernameLabel.TextSize = s(10)
+    UsernameLabel.TextColor3 = COL.SubText
     UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
     UsernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    UsernameLabel.ZIndex = 5
     UsernameLabel.Parent = Card
 
     local StaffBadge = Instance.new("TextLabel")
-    StaffBadge.Name = "Badge"
-    StaffBadge.Size = scaleUDim(44, 18)
-    StaffBadge.Position = UDim2.new(1, -(52 * SCALE), 0.5, -(9 * SCALE))
-    StaffBadge.BackgroundColor3 = Theme.Danger
+    StaffBadge.Size = UDim2.new(0, s(44), 0, s(18))
+    StaffBadge.Position = UDim2.new(1, -s(52), 0.5, -s(9))
+    StaffBadge.BackgroundColor3 = COL.BadgeBg
     StaffBadge.BorderSizePixel = 0
-    StaffBadge.Text = "⚠ STAFF"
+    StaffBadge.Text = "STAFF"
     StaffBadge.Font = Enum.Font.GothamBlack
-    StaffBadge.TextSize = scaleSize(8)
-    StaffBadge.TextColor3 = Theme.Text
+    StaffBadge.TextSize = s(8)
+    StaffBadge.TextColor3 = COL.Text
+    StaffBadge.ZIndex = 5
     StaffBadge.Parent = Card
-    Instance.new("UICorner", StaffBadge).CornerRadius = UDim.new(0, 5 * SCALE)
-
-    local badgeGrad = Instance.new("UIGradient")
-    badgeGrad.Rotation = 45
-    badgeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 50, 80)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 20, 147))
-    })
-    badgeGrad.Parent = StaffBadge
+    corner(StaffBadge, s(6))
+    strokeUI(StaffBadge, COL.Danger, 1, 0.3)
 
     Card.MouseEnter:Connect(function()
-        TweenService:Create(CardStroke, TweenInfo.new(0.2), {Color = Theme.Purple, Transparency = 0}):Play()
+        TweenService:Create(cardStroke, TweenInfo.new(0.15), {Color = COL.Stroke1, Transparency = 0}):Play()
     end)
     Card.MouseLeave:Connect(function()
-        TweenService:Create(CardStroke, TweenInfo.new(0.2), {Color = Theme.Stroke, Transparency = 0.3}):Play()
+        TweenService:Create(cardStroke, TweenInfo.new(0.15), {Color = COL.Stroke2, Transparency = 0.4}):Play()
     end)
 
     return Card
@@ -624,93 +421,43 @@ local function updateStaffList()
         end
     end
     CountLabel.Text = tostring(staffCount)
+    if staffCount > 0 then
+        CountLabel.BackgroundColor3 = COL.Danger
+    else
+        CountLabel.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+    end
     NoStaffLabel.Visible = (staffCount == 0)
-    ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + (10 * SCALE))
 end
 
-local mainColorPhase = 0
-local lastColorUpdate = 0
-local mainColorConnection = RunService.Heartbeat:Connect(function(dt)
-    if not MainFrame.Parent then
-        mainColorConnection:Disconnect()
-        return
-    end
-    lastColorUpdate = lastColorUpdate + dt
-    if lastColorUpdate < 0.05 then return end
-    lastColorUpdate = 0
-    mainColorPhase = (mainColorPhase + 0.05 * 0.6) % 1
-    local function lerpColor(t)
-        local colors = {
-            Color3.fromRGB(255, 20, 147),
-            Color3.fromRGB(220, 20, 60),
-            Color3.fromRGB(180, 50, 255),
-            Color3.fromRGB(255, 105, 180),
-        }
-        local index = math.floor(t * #colors) + 1
-        local nextIndex = (index % #colors) + 1
-        local localT = (t * #colors) % 1
-        return colors[index]:Lerp(colors[nextIndex], localT)
-    end
-    local o1 = mainColorPhase
-    local o2 = (mainColorPhase + 0.33) % 1
-    local o3 = (mainColorPhase + 0.66) % 1
-    mainStrokeGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, lerpColor(o1)),
-        ColorSequenceKeypoint.new(0.5, lerpColor(o2)),
-        ColorSequenceKeypoint.new(1, lerpColor(o3))
-    })
-    headerTextGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, lerpColor(o1)),
-        ColorSequenceKeypoint.new(0.5, lerpColor(o2)),
-        ColorSequenceKeypoint.new(1, lerpColor(o3))
-    })
-    headerXGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, lerpColor(o2)),
-        ColorSequenceKeypoint.new(1, lerpColor(o3))
-    })
-    subGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, lerpColor(o2):Lerp(Color3.new(1,1,1), 0.3)),
-        ColorSequenceKeypoint.new(0.5, lerpColor(o3)),
-        ColorSequenceKeypoint.new(1, lerpColor(o1):Lerp(Color3.new(1,1,1), 0.3))
-    })
-end)
-table.insert(Shared.Connections[key], mainColorConnection)
-
-local dragging, dragInput, dragStart, startPos, shadowStartPos
-MainFrame.InputBegan:Connect(function(input)
+local dragging, dragInput, dragStart, startPos
+HeaderFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
         startPos = MainFrame.Position
-        shadowStartPos = MainShadow.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
     end
 end)
-MainFrame.InputChanged:Connect(function(input)
+HeaderFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
 end)
-game:GetService("UserInputService").InputChanged:Connect(function(input)
+UserInputService.InputChanged:Connect(function(input)
     if input == dragInput and dragging then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        MainShadow.Position = UDim2.new(shadowStartPos.X.Scale, shadowStartPos.X.Offset + delta.X, shadowStartPos.Y.Scale, shadowStartPos.Y.Offset + delta.Y)
-    end
-end)
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
     end
 end)
 
 MainFrame.Size = UDim2.new(0, 0, 0, 0)
-MainShadow.Size = UDim2.new(0, 0, 0, 0)
-MainShadow.BackgroundTransparency = 1
-TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = scaleUDim(230, 290)}):Play()
-TweenService:Create(MainShadow, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = scaleUDim(240, 300)}):Play()
-TweenService:Create(MainShadow, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {BackgroundTransparency = 0.5}):Play()
+TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+    Size = UDim2.new(0, panelW, 0, panelH)
+}):Play()
 
-showModernNotification("Staff Monitor Active - Protecting Your Session", "info")
+showNotification("Staff Monitor Active - Protecting Your Session", "info")
 
 updateStaffList()
 
@@ -759,14 +506,14 @@ task.spawn(function()
         end
         for userId, plr in pairs(currentStaff) do
             if not lastStaffInServer[userId] then
-                showModernNotification("⚠ " .. plr.Name .. " (STAFF) joined! Disable scripts or leave!", "danger")
+                showNotification(plr.Name .. " (STAFF) joined! Disable scripts or leave!", "danger")
                 updateStaffList()
             end
         end
         for userId, oldPlr in pairs(lastStaffInServer) do
             if not currentStaff[userId] then
                 local leftName = oldPlr and oldPlr.Name or "Staff"
-                showModernNotification("✓ " .. leftName .. " (Staff) left. Safe to continue.", "success")
+                showNotification(leftName .. " (Staff) left. Safe to continue.", "success")
                 updateStaffList()
             end
         end

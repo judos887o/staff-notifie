@@ -7,15 +7,14 @@ local Workspace = game:GetService("Workspace")
 local localPlayer = Players.LocalPlayer
 
 local Shared = getgenv().SchmecktHubPC or {}
+getgenv().SchmecktHubPC = Shared
 local key = "StaffNotifier"
 
 local IS_MOBILE = Shared.Platform == "Mobile" or UserInputService.TouchEnabled
-local SCALE = IS_MOBILE and 0.5 or 1
-
+local SCALE = IS_MOBILE and (1 / 2.2) or 1
 local function s(v) return math.floor(v * SCALE) end
 
 local CLICK_SOUND_ID = "rbxassetid://100809160609628"
-local INTRO_LOGO_ASSET = "rbxassetid://121759217057084"
 
 local clickSound = SoundService:FindFirstChild("SchmecktClickSound")
 if not clickSound then
@@ -27,15 +26,11 @@ if not clickSound then
 end
 
 local function playClick()
-    task.spawn(function()
-        pcall(function() clickSound:Stop() clickSound:Play() end)
-    end)
+    task.spawn(function() pcall(function() clickSound:Stop() clickSound:Play() end) end)
 end
 
 if Shared.Connections and Shared.Connections[key] then
-    for _, c in pairs(Shared.Connections[key]) do
-        pcall(function() c:Disconnect() end)
-    end
+    for _, c in pairs(Shared.Connections[key]) do pcall(function() c:Disconnect() end) end
 end
 Shared.Connections = Shared.Connections or {}
 Shared.Connections[key] = {}
@@ -47,32 +42,42 @@ if localPlayer:WaitForChild("PlayerGui"):FindFirstChild("StaffListGui") then
     localPlayer.PlayerGui.StaffListGui:Destroy()
 end
 
+Shared.AutoKickStaff = Shared.AutoKickStaff or false
+
 local COL = {
-    BgMain    = Color3.fromRGB(90, 0, 0),
-    BgTop     = Color3.fromRGB(140, 0, 0),
-    BgInner   = Color3.fromRGB(120, 0, 0),
-    Card      = Color3.fromRGB(135, 0, 0),
-    Card2     = Color3.fromRGB(150, 0, 0),
-    Stroke1   = Color3.fromRGB(255, 110, 110),
-    Stroke2   = Color3.fromRGB(255, 150, 150),
-    Text      = Color3.fromRGB(255, 255, 255),
-    SubText   = Color3.fromRGB(255, 210, 210),
-    DimText   = Color3.fromRGB(255, 170, 170),
-    DevText   = Color3.fromRGB(200, 160, 160),
-    Danger    = Color3.fromRGB(255, 50, 50),
-    Success   = Color3.fromRGB(50, 255, 120),
-    ScrollBar = Color3.fromRGB(255, 80, 80),
-    BadgeBg   = Color3.fromRGB(200, 30, 30),
+    BgMain = Color3.fromRGB(14, 10, 10),
+    StrokeMain = Color3.fromRGB(150, 30, 30),
+    Div = Color3.fromRGB(60, 15, 15),
+    RowBg = Color3.fromRGB(20, 14, 14),
+    RowStroke = Color3.fromRGB(50, 20, 20),
+    TextOn = Color3.fromRGB(255, 255, 255),
+    TextOff = Color3.fromRGB(160, 120, 120),
+    Danger = Color3.fromRGB(255, 60, 60),
+    Success = Color3.fromRGB(60, 255, 120),
+    BadgeBg = Color3.fromRGB(200, 40, 40),
+    ScrollBar = Color3.fromRGB(200, 40, 40),
+    ToggleBgOn = Color3.fromRGB(200, 40, 40),
+    ToggleBgOff = Color3.fromRGB(40, 20, 20),
+    Dot = Color3.fromRGB(255, 255, 255),
 }
 
 local function corner(inst, px)
-    local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0, px or s(10)); c.Parent = inst; return c
-end
-local function strokeUI(inst, color, thickness, transparency)
-    local st = Instance.new("UIStroke"); st.Color = color; st.Thickness = thickness or 1; st.Transparency = transparency or 0; st.Parent = inst; return st
+    local c = Instance.new("UICorner")
+    c.CornerRadius = UDim.new(0, px or s(10))
+    c.Parent = inst
+    return c
 end
 
-local groupId = 128056089
+local function strokeUI(inst, color, thickness, transparency)
+    local st = Instance.new("UIStroke")
+    st.Color = color
+    st.Thickness = thickness or 1
+    st.Transparency = transparency or 0
+    st.Parent = inst
+    return st
+end
+
+local groupId = 106259084 -- NEUE GRUPPEN ID
 local minimumRank = 1
 local lastStaffInServer = {}
 local staffCache = setmetatable({}, {__mode = "k"})
@@ -85,6 +90,10 @@ local function isStaff(player)
     return result
 end
 
+local function performAutoKick(staffName)
+    localPlayer:Kick("🛡️ ShadowPepper Hub:\nAuto-Kick Triggered!\nA Staff Member (" .. staffName .. ") has joined the game.")
+end
+
 local function showNotification(text, notifType)
     local notifGui = Instance.new("ScreenGui")
     notifGui.Name = "StaffNotifierGui"
@@ -92,86 +101,43 @@ local function showNotification(text, notifType)
     notifGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     notifGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
-    local notifW = s(500)
-    local notifH = s(64)
+    local notifW = s(340)
+    local notifH = s(50)
 
     local mainFrame = Instance.new("Frame")
     mainFrame.Size = UDim2.new(0, notifW, 0, notifH)
     mainFrame.Position = UDim2.new(0.5, -notifW/2, 0, -notifH - s(20))
     mainFrame.BackgroundColor3 = COL.BgMain
-    mainFrame.BackgroundTransparency = 0.05
     mainFrame.BorderSizePixel = 0
     mainFrame.ZIndex = 10
     mainFrame.Parent = notifGui
-    corner(mainFrame, s(14))
+    corner(mainFrame, s(8))
 
-    local notifStrokeColor = COL.Stroke1
+    local notifStrokeColor = COL.StrokeMain
     if notifType == "danger" then notifStrokeColor = COL.Danger
     elseif notifType == "success" then notifStrokeColor = COL.Success end
-    strokeUI(mainFrame, notifStrokeColor, s(2), 0)
-
-    local topGrad = Instance.new("UIGradient")
-    topGrad.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(165, 0, 0)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(100, 0, 0)),
-    })
-    topGrad.Parent = mainFrame
+    strokeUI(mainFrame, notifStrokeColor, 1, 0)
 
     local accentBar = Instance.new("Frame")
     accentBar.Size = UDim2.new(0, s(4), 1, -s(16))
-    accentBar.Position = UDim2.new(0, s(10), 0, s(8))
+    accentBar.Position = UDim2.new(0, s(8), 0, s(8))
     accentBar.BorderSizePixel = 0
     accentBar.ZIndex = 11
     accentBar.Parent = mainFrame
-    corner(accentBar, s(2))
+    corner(accentBar, s(4))
 
-    if notifType == "danger" then
-        accentBar.BackgroundColor3 = COL.Danger
-    elseif notifType == "success" then
-        accentBar.BackgroundColor3 = COL.Success
-    else
-        accentBar.BackgroundColor3 = COL.Stroke1
-    end
-
-    local logo = Instance.new("ImageLabel")
-    logo.Size = UDim2.new(0, s(34), 0, s(34))
-    logo.Position = UDim2.new(0, s(22), 0.5, -s(17))
-    logo.BackgroundTransparency = 1
-    logo.Image = INTRO_LOGO_ASSET
-    logo.ScaleType = Enum.ScaleType.Crop
-    logo.ZIndex = 11
-    logo.Parent = mainFrame
-    corner(logo, s(999))
-    strokeUI(logo, COL.Stroke2, 1, 0.3)
-
-    local iconLabel = Instance.new("TextLabel")
-    iconLabel.Size = UDim2.new(0, s(24), 0, s(24))
-    iconLabel.Position = UDim2.new(0, s(64), 0.5, -s(12))
-    iconLabel.BackgroundTransparency = 1
-    iconLabel.Font = Enum.Font.GothamBlack
-    iconLabel.TextSize = s(18)
-    iconLabel.ZIndex = 11
-    iconLabel.Parent = mainFrame
-
-    if notifType == "danger" then
-        iconLabel.Text = "!"
-        iconLabel.TextColor3 = COL.Danger
-    elseif notifType == "success" then
-        iconLabel.Text = "✓"
-        iconLabel.TextColor3 = COL.Success
-    else
-        iconLabel.Text = "i"
-        iconLabel.TextColor3 = COL.Stroke1
-    end
+    if notifType == "danger" then accentBar.BackgroundColor3 = COL.Danger
+    elseif notifType == "success" then accentBar.BackgroundColor3 = COL.Success
+    else accentBar.BackgroundColor3 = COL.StrokeMain end
 
     local notifText = Instance.new("TextLabel")
     notifText.Text = text
-    notifText.Size = UDim2.new(1, -s(100), 1, -s(16))
-    notifText.Position = UDim2.new(0, s(94), 0, s(8))
+    notifText.Size = UDim2.new(1, -s(30), 1, 0)
+    notifText.Position = UDim2.new(0, s(20), 0, 0)
     notifText.BackgroundTransparency = 1
-    notifText.TextColor3 = COL.Text
+    notifText.TextColor3 = COL.TextOn
     notifText.Font = Enum.Font.GothamBold
-    notifText.TextSize = s(14)
+    notifText.TextSize = s(12)
     notifText.TextWrapped = true
     notifText.ZIndex = 11
     notifText.TextYAlignment = Enum.TextYAlignment.Center
@@ -202,153 +168,159 @@ StaffListGui.ResetOnSpawn = false
 StaffListGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 StaffListGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
-local panelW = s(240)
-local panelH = s(280)
-local headerH = s(46)
+local panelW = s(250)
+local panelH = s(320)
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, panelW, 0, panelH)
-MainFrame.Position = UDim2.new(1, -(panelW + s(20)), 1, -(panelH + s(20)))
+MainFrame.Position = UDim2.new(1, -s(550), 1, -panelH - s(20))
 MainFrame.BackgroundColor3 = COL.BgMain
-MainFrame.BackgroundTransparency = 0
 MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
 MainFrame.Parent = StaffListGui
-corner(MainFrame, s(14))
-strokeUI(MainFrame, COL.Stroke1, s(2), 0)
+corner(MainFrame, s(8))
+strokeUI(MainFrame, COL.StrokeMain, 1, 0)
 
-local HeaderFrame = Instance.new("Frame")
-HeaderFrame.Size = UDim2.new(1, -s(12), 0, headerH)
-HeaderFrame.Position = UDim2.new(0, s(6), 0, s(6))
-HeaderFrame.BackgroundColor3 = COL.BgTop
-HeaderFrame.BorderSizePixel = 0
-HeaderFrame.Parent = MainFrame
-corner(HeaderFrame, s(12))
-strokeUI(HeaderFrame, COL.Stroke2, 1, 0.15)
+local PanelTitle = Instance.new("TextLabel", MainFrame)
+PanelTitle.Size = UDim2.new(1, -s(20), 0, s(40))
+PanelTitle.Position = UDim2.new(0, s(16), 0, 0)
+PanelTitle.BackgroundTransparency = 1
+PanelTitle.Text = "Staff Monitor"
+PanelTitle.TextColor3 = COL.TextOn
+PanelTitle.Font = Enum.Font.GothamBold
+PanelTitle.TextSize = s(14)
+PanelTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-local headerGrad = Instance.new("UIGradient")
-headerGrad.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(165, 0, 0)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 0, 0)),
-})
-headerGrad.Parent = HeaderFrame
-
-local headerLogo = Instance.new("ImageLabel")
-headerLogo.Size = UDim2.new(0, s(26), 0, s(26))
-headerLogo.Position = UDim2.new(0, s(8), 0.5, -s(13))
-headerLogo.BackgroundTransparency = 1
-headerLogo.Image = INTRO_LOGO_ASSET
-headerLogo.ScaleType = Enum.ScaleType.Crop
-headerLogo.ZIndex = 4
-headerLogo.Parent = HeaderFrame
-corner(headerLogo, s(999))
-strokeUI(headerLogo, COL.Stroke2, 1, 0.3)
-
-local headerTitle = Instance.new("TextLabel")
-headerTitle.Size = UDim2.new(1, -s(80), 0, s(18))
-headerTitle.Position = UDim2.new(0, s(40), 0, s(4))
-headerTitle.BackgroundTransparency = 1
-headerTitle.Text = "STAFF MONITOR"
-headerTitle.Font = Enum.Font.GothamBlack
-headerTitle.TextSize = s(11)
-headerTitle.TextColor3 = COL.Text
-headerTitle.TextXAlignment = Enum.TextXAlignment.Left
-headerTitle.ZIndex = 4
-headerTitle.Parent = HeaderFrame
-
-local headerSub = Instance.new("TextLabel")
-headerSub.Size = UDim2.new(1, -s(80), 0, s(12))
-headerSub.Position = UDim2.new(0, s(40), 0, s(24))
-headerSub.BackgroundTransparency = 1
-headerSub.Text = "developed by schmeckt"
-headerSub.Font = Enum.Font.Gotham
-headerSub.TextSize = s(9)
-headerSub.TextColor3 = COL.DevText
-headerSub.TextXAlignment = Enum.TextXAlignment.Left
-headerSub.ZIndex = 4
-headerSub.Parent = HeaderFrame
-
-local CountLabel = Instance.new("TextLabel")
-CountLabel.Name = "Count"
-CountLabel.Size = UDim2.new(0, s(28), 0, s(20))
-CountLabel.Position = UDim2.new(1, -s(36), 0.5, -s(10))
-CountLabel.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+-- WICHTIG: Name zu "StaffCountLabel" geändert, um den "Label" Bug von anderen Scripts zu umgehen!
+local CountLabel = Instance.new("TextLabel", MainFrame)
+CountLabel.Name = "StaffCountLabel"
+CountLabel.Size = UDim2.new(0, s(24), 0, s(18))
+CountLabel.Position = UDim2.new(1, -s(34), 0, s(11))
+CountLabel.BackgroundColor3 = COL.ToggleBgOff
 CountLabel.BorderSizePixel = 0
 CountLabel.Text = "0"
 CountLabel.Font = Enum.Font.GothamBlack
 CountLabel.TextSize = s(11)
-CountLabel.TextColor3 = COL.Text
-CountLabel.ZIndex = 4
-CountLabel.Parent = HeaderFrame
-corner(CountLabel, s(8))
+CountLabel.TextColor3 = COL.TextOn
+corner(CountLabel, s(6))
 
-local ContentFrame = Instance.new("Frame")
-ContentFrame.Size = UDim2.new(1, -s(12), 1, -(headerH + s(18)))
-ContentFrame.Position = UDim2.new(0, s(6), 0, headerH + s(12))
-ContentFrame.BackgroundColor3 = COL.BgInner
-ContentFrame.BorderSizePixel = 0
-ContentFrame.Parent = MainFrame
-corner(ContentFrame, s(12))
-strokeUI(ContentFrame, COL.Stroke2, 1, 0.25)
+local PanelDiv = Instance.new("Frame", MainFrame)
+PanelDiv.Size = UDim2.new(1, 0, 0, math.max(1, s(1)))
+PanelDiv.Position = UDim2.new(0, 0, 0, s(40))
+PanelDiv.BackgroundColor3 = COL.Div
+PanelDiv.BorderSizePixel = 0
 
 local ScrollFrame = Instance.new("ScrollingFrame")
 ScrollFrame.Name = "StaffList"
-ScrollFrame.Size = UDim2.new(1, -s(12), 1, -s(12))
-ScrollFrame.Position = UDim2.new(0, s(6), 0, s(6))
+ScrollFrame.Size = UDim2.new(1, 0, 1, -s(84)) -- Platz für Toggle unten lassen
+ScrollFrame.Position = UDim2.new(0, 0, 0, s(41))
 ScrollFrame.BackgroundTransparency = 1
 ScrollFrame.BorderSizePixel = 0
-ScrollFrame.ScrollBarThickness = s(3)
+ScrollFrame.ScrollBarThickness = s(2)
 ScrollFrame.ScrollBarImageColor3 = COL.ScrollBar
-ScrollFrame.ScrollBarImageTransparency = 0.3
 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ScrollFrame.Parent = ContentFrame
+ScrollFrame.Parent = MainFrame
+Instance.new("UIPadding", ScrollFrame).PaddingTop = UDim.new(0, s(8))
+Instance.new("UIPadding", ScrollFrame).PaddingBottom = UDim.new(0, s(8))
 
 local ListLayout = Instance.new("UIListLayout")
 ListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-ListLayout.Padding = UDim.new(0, s(5))
+ListLayout.Padding = UDim.new(0, s(6))
+ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ListLayout.Parent = ScrollFrame
-
-local ListPadding = Instance.new("UIPadding")
-ListPadding.PaddingTop = UDim.new(0, s(4))
-ListPadding.PaddingBottom = UDim.new(0, s(4))
-ListPadding.PaddingLeft = UDim.new(0, s(4))
-ListPadding.PaddingRight = UDim.new(0, s(4))
-ListPadding.Parent = ScrollFrame
 
 local NoStaffLabel = Instance.new("TextLabel")
 NoStaffLabel.Name = "NoStaff"
 NoStaffLabel.Size = UDim2.new(1, 0, 0, s(80))
 NoStaffLabel.BackgroundTransparency = 1
-NoStaffLabel.Text = "No staff detected\nin this server"
+NoStaffLabel.Text = "No Staff Detected Yet."
 NoStaffLabel.Font = Enum.Font.GothamSemibold
-NoStaffLabel.TextSize = s(13)
-NoStaffLabel.TextColor3 = COL.DimText
+NoStaffLabel.TextSize = s(12)
+NoStaffLabel.TextColor3 = COL.TextOff
 NoStaffLabel.TextWrapped = true
 NoStaffLabel.Visible = true
 NoStaffLabel.Parent = ScrollFrame
 
+-- ====== AUTO KICK TOGGLE ======
+local ToggleRow = Instance.new("Frame", MainFrame)
+ToggleRow.Size = UDim2.new(1, -s(20), 0, s(34))
+ToggleRow.AnchorPoint = Vector2.new(0.5, 1)
+ToggleRow.Position = UDim2.new(0.5, 0, 1, -s(6))
+ToggleRow.BackgroundColor3 = COL.RowBg
+corner(ToggleRow, s(6))
+strokeUI(ToggleRow, COL.RowStroke, 1, 0)
+
+local ToggleLabel = Instance.new("TextLabel", ToggleRow)
+ToggleLabel.Size = UDim2.new(0.65, 0, 1, 0)
+ToggleLabel.Position = UDim2.new(0, s(12), 0, 0)
+ToggleLabel.BackgroundTransparency = 1
+ToggleLabel.Text = "Auto Kick If Staff"
+ToggleLabel.Font = Enum.Font.GothamSemibold
+ToggleLabel.TextSize = s(12)
+ToggleLabel.TextColor3 = Shared.AutoKickStaff and COL.TextOn or COL.TextOff
+ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local ToggleBg = Instance.new("Frame", ToggleRow)
+ToggleBg.Size = UDim2.new(0, s(36), 0, s(18))
+ToggleBg.Position = UDim2.new(1, -s(44), 0.5, -s(9))
+ToggleBg.BackgroundColor3 = Shared.AutoKickStaff and COL.ToggleBgOn or COL.ToggleBgOff
+corner(ToggleBg, 1)
+
+local ToggleDot = Instance.new("Frame", ToggleBg)
+ToggleDot.Size = UDim2.new(0, s(12), 0, s(12))
+ToggleDot.Position = Shared.AutoKickStaff and UDim2.new(0, s(21), 0.5, -s(6)) or UDim2.new(0, s(3), 0.5, -s(6))
+ToggleDot.BackgroundColor3 = COL.Dot
+corner(ToggleDot, 1)
+
+local ToggleBtn = Instance.new("TextButton", ToggleRow)
+ToggleBtn.Size = UDim2.new(1, 0, 1, 0)
+ToggleBtn.BackgroundTransparency = 1
+ToggleBtn.Text = ""
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    playClick()
+    Shared.AutoKickStaff = not Shared.AutoKickStaff
+    local st = Shared.AutoKickStaff
+    
+    TweenService:Create(ToggleDot, TweenInfo.new(0.2), {Position = st and UDim2.new(0, s(21), 0.5, -s(6)) or UDim2.new(0, s(3), 0.5, -s(6))}):Play()
+    TweenService:Create(ToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = st and COL.ToggleBgOn or COL.ToggleBgOff}):Play()
+    TweenService:Create(ToggleLabel, TweenInfo.new(0.2), {TextColor3 = st and COL.TextOn or COL.TextOff}):Play()
+
+    if st then
+        -- Wenn man es einschaltet, checkt er sofort ob schon jemand da ist
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= localPlayer and isStaff(plr) then
+                performAutoKick(plr.Name)
+            end
+        end
+    end
+end)
+-- ==============================
+
 local function createStaffCard(player)
-    local cardH = s(50)
+    local cardH = s(46)
 
     local Card = Instance.new("Frame")
     Card.Name = "Staff_" .. player.UserId
-    Card.Size = UDim2.new(1, 0, 0, cardH)
-    Card.BackgroundColor3 = COL.Card
+    Card.Size = UDim2.new(0.9, 0, 0, cardH)
+    Card.BackgroundColor3 = COL.RowBg
     Card.BorderSizePixel = 0
     Card.Parent = ScrollFrame
-    corner(Card, s(10))
-    local cardStroke = strokeUI(Card, COL.Stroke2, 1, 0.4)
+    corner(Card, s(6))
+    local cardStroke = strokeUI(Card, COL.RowStroke, 1, 0)
 
     local Avatar = Instance.new("ImageLabel")
-    Avatar.Size = UDim2.new(0, s(34), 0, s(34))
-    Avatar.Position = UDim2.new(0, s(8), 0.5, -s(17))
+    Avatar.Size = UDim2.new(0, s(30), 0, s(30))
+    Avatar.Position = UDim2.new(0, s(8), 0.5, -s(15))
     Avatar.BackgroundTransparency = 1
     Avatar.BorderSizePixel = 0
     Avatar.ZIndex = 5
     Avatar.Parent = Card
     corner(Avatar, s(999))
-    strokeUI(Avatar, COL.Stroke1, s(2), 0.2)
+    strokeUI(Avatar, COL.StrokeMain, 1, 0)
 
     task.spawn(function()
         local ok, img = pcall(function()
@@ -358,51 +330,43 @@ local function createStaffCard(player)
     end)
 
     local NameLabel = Instance.new("TextLabel")
-    NameLabel.Size = UDim2.new(1, -s(110), 0, s(16))
-    NameLabel.Position = UDim2.new(0, s(50), 0, s(8))
+    NameLabel.Size = UDim2.new(1, -s(90), 0, s(16))
+    NameLabel.Position = UDim2.new(0, s(46), 0, s(6))
     NameLabel.BackgroundTransparency = 1
     NameLabel.Text = player.DisplayName
     NameLabel.Font = Enum.Font.GothamBold
     NameLabel.TextSize = s(12)
-    NameLabel.TextColor3 = COL.Text
+    NameLabel.TextColor3 = COL.TextOn
     NameLabel.TextXAlignment = Enum.TextXAlignment.Left
     NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
     NameLabel.ZIndex = 5
     NameLabel.Parent = Card
 
     local UsernameLabel = Instance.new("TextLabel")
-    UsernameLabel.Size = UDim2.new(1, -s(110), 0, s(12))
-    UsernameLabel.Position = UDim2.new(0, s(50), 0, s(26))
+    UsernameLabel.Size = UDim2.new(1, -s(90), 0, s(12))
+    UsernameLabel.Position = UDim2.new(0, s(46), 0, s(24))
     UsernameLabel.BackgroundTransparency = 1
     UsernameLabel.Text = "@" .. player.Name
     UsernameLabel.Font = Enum.Font.Gotham
     UsernameLabel.TextSize = s(10)
-    UsernameLabel.TextColor3 = COL.SubText
+    UsernameLabel.TextColor3 = COL.TextOff
     UsernameLabel.TextXAlignment = Enum.TextXAlignment.Left
     UsernameLabel.TextTruncate = Enum.TextTruncate.AtEnd
     UsernameLabel.ZIndex = 5
     UsernameLabel.Parent = Card
 
     local StaffBadge = Instance.new("TextLabel")
-    StaffBadge.Size = UDim2.new(0, s(44), 0, s(18))
-    StaffBadge.Position = UDim2.new(1, -s(52), 0.5, -s(9))
+    StaffBadge.Size = UDim2.new(0, s(40), 0, s(16))
+    StaffBadge.Position = UDim2.new(1, -s(48), 0.5, -s(8))
     StaffBadge.BackgroundColor3 = COL.BadgeBg
     StaffBadge.BorderSizePixel = 0
     StaffBadge.Text = "STAFF"
     StaffBadge.Font = Enum.Font.GothamBlack
     StaffBadge.TextSize = s(8)
-    StaffBadge.TextColor3 = COL.Text
+    StaffBadge.TextColor3 = COL.TextOn
     StaffBadge.ZIndex = 5
     StaffBadge.Parent = Card
-    corner(StaffBadge, s(6))
-    strokeUI(StaffBadge, COL.Danger, 1, 0.3)
-
-    Card.MouseEnter:Connect(function()
-        TweenService:Create(cardStroke, TweenInfo.new(0.15), {Color = COL.Stroke1, Transparency = 0}):Play()
-    end)
-    Card.MouseLeave:Connect(function()
-        TweenService:Create(cardStroke, TweenInfo.new(0.15), {Color = COL.Stroke2, Transparency = 0.4}):Play()
-    end)
+    corner(StaffBadge, s(4))
 
     return Card
 end
@@ -422,15 +386,15 @@ local function updateStaffList()
     end
     CountLabel.Text = tostring(staffCount)
     if staffCount > 0 then
-        CountLabel.BackgroundColor3 = COL.Danger
+        CountLabel.BackgroundColor3 = COL.BadgeBg
     else
-        CountLabel.BackgroundColor3 = Color3.fromRGB(80, 20, 20)
+        CountLabel.BackgroundColor3 = COL.ToggleBgOff
     end
     NoStaffLabel.Visible = (staffCount == 0)
 end
 
 local dragging, dragInput, dragStart, startPos
-HeaderFrame.InputBegan:Connect(function(input)
+MainFrame.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
         dragStart = input.Position
@@ -440,7 +404,7 @@ HeaderFrame.InputBegan:Connect(function(input)
         end)
     end
 end)
-HeaderFrame.InputChanged:Connect(function(input)
+MainFrame.InputChanged:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
         dragInput = input
     end
@@ -457,7 +421,7 @@ TweenService:Create(MainFrame, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.Ea
     Size = UDim2.new(0, panelW, 0, panelH)
 }):Play()
 
-showNotification("Staff Monitor Active - Protecting Your Session", "info")
+showNotification("Staff Monitor Active", "success")
 
 updateStaffList()
 
@@ -482,6 +446,10 @@ table.insert(Shared.Connections[key], cleanupListener)
 local pa = Players.PlayerAdded:Connect(function(plr)
     task.wait(1)
     if isStaff(plr) then
+        if Shared.AutoKickStaff then
+            performAutoKick(plr.Name)
+            return
+        end
         updateStaffList()
     end
 end)
@@ -506,14 +474,18 @@ task.spawn(function()
         end
         for userId, plr in pairs(currentStaff) do
             if not lastStaffInServer[userId] then
-                showNotification(plr.Name .. " (STAFF) joined! Disable scripts or leave!", "danger")
+                if Shared.AutoKickStaff then
+                    performAutoKick(plr.Name)
+                    return
+                end
+                showNotification(plr.Name .. " joined! (STAFF)", "danger")
                 updateStaffList()
             end
         end
         for userId, oldPlr in pairs(lastStaffInServer) do
             if not currentStaff[userId] then
                 local leftName = oldPlr and oldPlr.Name or "Staff"
-                showNotification(leftName .. " (Staff) left. Safe to continue.", "success")
+                showNotification(leftName .. " left. Safe to continue.", "success")
                 updateStaffList()
             end
         end
